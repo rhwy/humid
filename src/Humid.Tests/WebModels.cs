@@ -32,11 +32,13 @@ namespace Humid.Tests
             var req = Request(type,route);
 
             Assert.Equal("***",req.Route);
+            Assert.Equal(RequestType.UNKNOWN,req.Type);
         }
 
 
-        [Fact] //a response is some content associated with a status code
-        public void Response_has_content_code()
+        //a response is some content associated with a status code
+        [Fact] public void 
+        Response_has_content_code()
         {
             var content = "hello";
             var code = 200;
@@ -46,50 +48,41 @@ namespace Humid.Tests
             Assert.Equal(200, response.StatusCode);
             Assert.Equal(content,response.Content);
         }
-/* 
-        [Fact] //we'll need to manipulate response along with the request, that
-         // means that we'll need a context to play with both
-        public void Context_is_request_restponse()
-        {
-            var req = new Request{ Route="route",Type = RequestType.UNKNOWN};
-            var response = new Response{Content = "content",StatusCode = 0};
 
-            var context = new Context { Request = req, Response = response };
-            context.Response.StatusCode = 200;
-            Assert.Equal(200, context.Response.StatusCode);
+        //we'll need to manipulate response along with the request, that
+        // means that we'll need a context to play with both
+        [Fact] public void 
+        Context_is_request_and_response()
+        {
+            var req = Request(RequestType.UNKNOWN,"/route");
+            var resp = Response("hello",123);
+
+            var context = Context(req,resp);
+            Assert.Equal(123, context.Response.StatusCode);
         }
 
-        [Fact] //finally, a web request, is defined as the transformation of
+ 
+        //finally, a web request, is defined as the transformation of
         // a context! that's it ;-), let's call it a WebAction
-        // public void WebAction_is_context_transform()
-        // {
-        //     var req = new Request{ Route="hello",Type = RequestType.UNKNOWN};
-        //     var response = new Response{Content = "content",StatusCode = 0};
-        //     var beforeContext = new Context { Request = req, Response = response };
+        [Fact] public void 
+        WebAction_is_context_transform()
+        {
+            var req =Request(RequestType.UNKNOWN,"/hello");
+            var response = Response("xxx",0);
+            var beforeContext = Context(req,response);
 
-        //     WebAction action = (ctx) => new Some<Context>{
-        //             Value = new Context {
-        //                 Request = ctx.Request,
-        //                 Response = new Response{ Content = "hello", StatusCode = 200}
-        //             }} ;
+            WebAction ok = (ctx) => Context(
+                request : ctx.Request,
+                response : Response(ctx.Response.Content,200)
+            );
 
-        //     var afterContext = action(beforeContext);
+            var afterContext = ok(beforeContext);
 
-        //     var result = "";
-        //     switch (afterContext)
-        //     {
-        //         case None<Context> none:
-        //             result = "not found";
-        //             break;
-        //         case Some<Context> some when some.Value.Response.StatusCode == 200:
-        //             result = some.Value.Response.Content;
-        //             break;
-        //         default:
-        //             result = "error";
-        //             break;
-        //     }
-        //     Assert.Equal("hello",result);
-        //}
+            
+            Assert.Equal(200,afterContext.Response.StatusCode);
+            Assert.Equal("xxx",afterContext.Response.Content);
+        }
+/*
         public void WebAction_is_context_transform()
         {
             var req = new Request{ Route="hello",Type = RequestType.UNKNOWN};

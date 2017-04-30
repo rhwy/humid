@@ -17,6 +17,9 @@
 
         public static Response Response(string content, int statusCode)
         => new Response(content,statusCode);
+
+        public static Context Context(Request request, Response response)
+        => new Context(request,response);
     }
 
 
@@ -49,5 +52,18 @@
             Content = content; StatusCode = statusCode;
         }
     }
+
+    public struct Context
+    {
+        public Request Request {get;}
+        public Response Response {get;}
+        public Context(Request request, Response response)
+        {
+            Request = request; Response = response;
+        }
+    }
+
+    public delegate Context WebAction(Context before);
+    
     #endregion
 }
