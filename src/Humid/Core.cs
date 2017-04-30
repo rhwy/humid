@@ -1,7 +1,6 @@
 ﻿namespace Humid
 {
     using System;
-
     public static class Core
     {
         public static RequestType GET => RequestType.GET;
@@ -61,9 +60,23 @@
         {
             Request = request; Response = response;
         }
+
+        public Context With(
+                RequestType? type = null, 
+                string route = null,
+                string content = null,
+                int? statusCode = null)
+        => new Context(
+                new Request(
+                    type ?? Request.Type,
+                    route ?? Request.Route),
+                new Response(
+                    content ?? Response.Content,
+                    statusCode ?? Response.StatusCode));
+        
     }
 
     public delegate Context WebAction(Context before);
-    
+
     #endregion
 }

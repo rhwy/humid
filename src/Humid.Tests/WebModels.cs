@@ -82,6 +82,22 @@ namespace Humid.Tests
             Assert.Equal(200,afterContext.Response.StatusCode);
             Assert.Equal("xxx",afterContext.Response.Content);
         }
+
+        //as context should be immutable we need a helper to create
+        //a new context by just changing a property from a previous 
+        //context
+        [Fact] public void
+        we_can_use_a_helper_to_create_a_new_context_from_previous()
+        {
+            var previous = Context(
+                Request(RequestType.GET,"/hello"),
+                Response("hello",200));
+            
+            var newContext = previous.With(content:"plop");
+
+            Assert.Equal("plop",newContext.Response.Content);
+            Assert.Equal("/hello",newContext.Request.Route);
+        }
 /*
         public void WebAction_is_context_transform()
         {
