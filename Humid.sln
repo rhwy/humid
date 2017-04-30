@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E57DBBC2-9211-487A-ABA3-9144BE98FCF9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Humid", "src\Humid\Humid.csproj", "{3D5F74C5-C2A6-40E4-8C34-3AA0C52C6789}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HumidWeb", "src\HumidWeb\HumidWeb.csproj", "{3D5F74C5-C2A6-40E4-8C34-3AA0C52C6789}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Humid.Tests", "src\Humid.Tests\Humid.Tests.csproj", "{EE10EFDF-52F7-4C91-850A-F15C15CB4A9B}"
 EndProject
