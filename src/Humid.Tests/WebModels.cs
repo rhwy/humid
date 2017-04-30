@@ -61,9 +61,25 @@ namespace Humid.Tests
             Assert.Equal(123, context.Response.StatusCode);
         }
 
- 
+        //as context should be immutable we need a helper to create
+        //a new context by just changing a property from a previous 
+        //context
+        [Fact] public void
+        we_can_use_a_helper_to_create_a_new_context_from_previous()
+        {
+            var previous = Context(
+                Request(RequestType.GET,"/hello"),
+                Response("hello",200));
+            
+            var newContext = previous.With(content:"plop");
+
+            Assert.Equal("plop",newContext.Response.Content);
+            Assert.Equal("/hello",newContext.Request.Route);
+        }
+
         //finally, a web request, is defined as the transformation of
         // a context! that's it ;-), let's call it a WebAction
+        // webaction = Func<Context,Context>
         [Fact] public void 
         WebAction_is_context_transform()
         {
@@ -83,43 +99,33 @@ namespace Humid.Tests
             Assert.Equal("xxx",afterContext.Response.Content);
         }
 
-        //as context should be immutable we need a helper to create
-        //a new context by just changing a property from a previous 
-        //context
+        //In order to keep webaction signature simple and be able
+        //to chain many webbactions, we also need to have a parametrized 
+        //webaction which is the composition of a new function and a webaction, 
+        //it should return a webaction:
+        //WebActionFeature<T> = Func<T,WebAction>
         [Fact] public void
-        we_can_use_a_helper_to_create_a_new_context_from_previous()
+        featured_webaction_is_a_composition_returning_webaction()
         {
-            var previous = Context(
-                Request(RequestType.GET,"/hello"),
-                Response("hello",200));
-            
-            var newContext = previous.With(content:"plop");
+            var req =Request(RequestType.UNKNOWN,"/hello");
+            var response = Response("xxx",0);
+            var beforeContext = Context(req,response);
 
-            Assert.Equal("plop",newContext.Response.Content);
-            Assert.Equal("/hello",newContext.Request.Route);
-        }
-/*
-        public void WebAction_is_context_transform()
-        {
-            var req = new Request{ Route="hello",Type = RequestType.UNKNOWN};
-            var response = new Response{Content = "content",StatusCode = 0};
-            var beforeContext = new Context { Request = req, Response = response };
-            
-            WebAction action = (ctx) => Some(
-                    new Context {
-                        Request = ctx.Request,
-                        Response = new Response{ Content = "hello", StatusCode = 200}
-                    }) ;
+            WebActionFeature<string> addContent = (content) => 
+                (ctx) => ctx.With(content : content);
 
-            var afterContext = action(beforeContext);
+            WebAction ok = (ctx) => Context(
+                request : ctx.Request,
+                response : Response(ctx.Response.Content,200)
+            );
 
-            
-            var result = "";
+            var afterContext1 = addContent("oh oh oh")(beforeContext);
+            var afterContext = ok(afterContext1);
+            Assert.Equal(200,afterContext.Response.StatusCode);
+            Assert.Equal("oh oh oh",afterContext.Response.Content);
+        }        
+        
 
-            Assert.Equal("hello",result);
-
-        }
-*/
 
     }
 }

@@ -78,5 +78,6 @@
 
     public delegate Context WebAction(Context before);
 
+    public delegate WebAction WebActionFeature<T>(T value);
     #endregion
 }
