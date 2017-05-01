@@ -9,7 +9,12 @@
         public static RequestType HEAD => RequestType.HEAD;
         public static RequestType DEFAULT_REQUEST_TYPE => RequestType.UNKNOWN;
 
-
+        public static class Defaults
+        {
+            public static Context Context => Context.Default;
+            public static Request Request => Request.Default;
+            public static Response Response => Response.Default;
+        }
 
         public static Request Request(RequestType type, string route)
         => new Request(type,route);
@@ -35,11 +40,13 @@
     public struct Request
     {
         public RequestType Type {get;}
-        public string Route {get;}
-        public Request(RequestType type, string route)
+        public string Path {get;}
+        public Request(RequestType type, string path)
         {
-            Type = type; Route = route;
+            Type = type; Path = path;
         }
+        public static Request Default 
+        => new Request(RequestType.UNKNOWN, string.Empty);
     }
 
     public struct Response
@@ -50,6 +57,7 @@
         {
             Content = content; StatusCode = statusCode;
         }
+        public static Response Default => new Response(string.Empty, 0);
     }
 
     public struct Context
@@ -61,19 +69,28 @@
             Request = request; Response = response;
         }
 
+        public static Context Default 
+        => new Context(Request.Default, Response.Default);
+
         public Context With(
                 RequestType? type = null, 
-                string route = null,
+                string path = null,
                 string content = null,
                 int? statusCode = null)
         => new Context(
                 new Request(
                     type ?? Request.Type,
-                    route ?? Request.Route),
+                    path ?? Request.Path),
                 new Response(
                     content ?? Response.Content,
                     statusCode ?? Response.StatusCode));
         
+        public static Context operator | (Context before, WebAction next)
+        => next(before);
+        public static Context operator > (Context before, WebAction next)
+        => next(before);
+         public static Context operator < (Context before, WebAction next)
+        => next(before);
     }
 
     public delegate Context WebAction(Context before);

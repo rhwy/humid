@@ -1,0 +1,33 @@
+namespace Humid.Tests
+{
+    using Xunit;
+    using static Humid.Core;
+
+    public class AdvancedPipelines
+    {
+        //we can chain multiple webactions to define the pipeline we
+        //want for a request.
+        [Fact] public void 
+        multiple_webactions_define_the_request_pipeline()
+        {
+            var newRequestWithContext = Defaults.Context.With(path:"/hello");
+            
+            WebActionFeature<string> addContent = (content) => 
+                (ctx) => ctx.With(content : content);
+
+            WebAction ok = (ctx) => Context(
+                request : ctx.Request,
+                response : Response(ctx.Response.Content,200)
+            );
+
+            var afterContext = newRequestWithContext
+                | addContent("hello")
+                | ok;
+            
+
+            Assert.Equal("hello",afterContext.Response.Content);
+
+        }
+
+    }
+}

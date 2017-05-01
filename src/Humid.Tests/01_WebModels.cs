@@ -31,7 +31,7 @@ namespace Humid.Tests
             var type = RequestType.UNKNOWN;
             var req = Request(type,route);
 
-            Assert.Equal("***",req.Route);
+            Assert.Equal("***",req.Path);
             Assert.Equal(RequestType.UNKNOWN,req.Type);
         }
 
@@ -54,10 +54,11 @@ namespace Humid.Tests
         [Fact] public void 
         Context_is_request_and_response()
         {
-            var req = Request(RequestType.UNKNOWN,"/route");
+            var req = Request(RequestType.UNKNOWN,"/path");
             var resp = Response("hello",123);
 
             var context = Context(req,resp);
+            Assert.Equal("/path",context.Request.Path);
             Assert.Equal(123, context.Response.StatusCode);
         }
 
@@ -74,7 +75,15 @@ namespace Humid.Tests
             var newContext = previous.With(content:"plop");
 
             Assert.Equal("plop",newContext.Response.Content);
-            Assert.Equal("/hello",newContext.Request.Route);
+            Assert.Equal("/hello",newContext.Request.Path);
+        }
+
+        //we need to start with an empty default context
+        [Fact] public void
+        we_shoudl_create_a_context_from_default()
+        {
+            var newContext = Defaults.Context;
+            Assert.Equal(RequestType.UNKNOWN,newContext.Request.Type);
         }
 
         //finally, a web request, is defined as the transformation of
@@ -125,7 +134,6 @@ namespace Humid.Tests
             Assert.Equal("oh oh oh",afterContext.Response.Content);
         }        
         
-
 
     }
 }
