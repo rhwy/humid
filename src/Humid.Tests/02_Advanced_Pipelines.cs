@@ -2,6 +2,7 @@ namespace Humid.Tests
 {
     using Xunit;
     using static Humid.Core;
+    using static FunctionalHelpers.Core;
 
     public class AdvancedPipelines
     {
@@ -20,12 +21,17 @@ namespace Humid.Tests
                 response : Response(ctx.Response.Content,200)
             );
 
-            var afterContext = newRequestWithContext
+            var requestPipeline = f( (Context context) => 
+                context
                 | addContent("hello")
-                | ok;
+                | ok
+                );
+
+            var afterContext = requestPipeline(newRequestWithContext);
             
 
             Assert.Equal("hello",afterContext.Response.Content);
+            Assert.Equal(200,afterContext.Response.StatusCode);        
 
         }
 
