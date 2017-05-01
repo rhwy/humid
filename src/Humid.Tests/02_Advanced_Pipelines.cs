@@ -32,8 +32,31 @@ namespace Humid.Tests
 
             Assert.Equal("hello",afterContext.Response.Content);
             Assert.Equal(200,afterContext.Response.StatusCode);        
-
         }
 
+        //we can now define a route as the couple :
+        //(template path, request pipeline)
+        [Fact] public void 
+        define_route_with_template_and_pipeline()
+        {
+            WebActionFeature<string> addContent = (content) => 
+                (ctx) => ctx.With(content : content);
+
+            WebAction ok = (ctx) => Context(
+                request : ctx.Request,
+                response : Response(ctx.Response.Content,200)
+            );
+
+            var requestPipeline = f( (Context context) => 
+                context
+                | addContent("hello")
+                | ok
+                );
+
+            Route route = new Route(
+                template : "/hello",
+                pipeline : requestPipeline
+            );
+        }
     }
 }

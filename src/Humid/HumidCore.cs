@@ -87,10 +87,22 @@
         
         public static Context operator | (Context before, WebAction next)
         => next(before);
-        public static Context operator > (Context before, WebAction next)
-        => next(before);
-         public static Context operator < (Context before, WebAction next)
-        => next(before);
+    }
+
+    public struct Route
+    {
+        public string Template {get;}
+        public WebAction Pipeline {get;}
+        public Route(string template, WebAction pipeline)
+        {
+            Template = template;
+            Pipeline = pipeline;
+        }
+        public Route(string template, Func<Context,Context> pipeline)
+        {
+            Template = template;
+            Pipeline = new WebAction(pipeline);
+        }
     }
 
     public delegate Context WebAction(Context before);
