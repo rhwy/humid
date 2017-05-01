@@ -58,5 +58,41 @@ namespace Humid.Tests
                 pipeline : requestPipeline
             );
         }
+
+        //if a route matches, we'll want to apply the pipeline to 
+        //get the updated context
+        [Fact] public void 
+        apply_pipeline_for_a_matched_route()
+       {
+           WebActionFeature<string> addContent = (some) => 
+                (ctx) => ctx.With(content : some);
+
+            WebAction ok = (ctx) => Context(
+                request : ctx.Request,
+                response : Response(ctx.Response.Content,200)
+            );
+
+            var requestPipeline = f( (Context context) => 
+                context
+                | addContent("hello")
+                | ok
+                );
+
+            Route route = new Route(
+                template : "/hello",
+                pipeline : requestPipeline
+            );
+
+            string content = string.Empty;
+            int status=0;
+            var beforeContext = Defaults.Context.With(path : "/hello");
+
+            if(route.Matches(path: "/hello"))
+                (content,status) = route.ApplyPipeline(beforeContext); 
+            
+            
+            Assert.Equal("hello",content);
+            Assert.Equal(200,status);
+       } 
     }
 }

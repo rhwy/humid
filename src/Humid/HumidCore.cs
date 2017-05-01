@@ -87,6 +87,12 @@
         
         public static Context operator | (Context before, WebAction next)
         => next(before);
+
+        public void Deconstruct(out string content, out int statusCode)
+        {
+            content = Response.Content;
+            statusCode = Response.StatusCode;
+        }
     }
 
     public struct Route
@@ -103,6 +109,15 @@
             Template = template;
             Pipeline = new WebAction(pipeline);
         }
+
+        public Context ApplyPipeline(Context before)
+        => Pipeline.Invoke(before);
+
+        public bool Matches(string path)
+        {
+            return Template == path;
+        }
+        
     }
 
     public delegate Context WebAction(Context before);
