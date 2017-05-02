@@ -4,7 +4,7 @@ namespace Humid.Tests
     using static Humid.Core;
     using static FunctionalHelpers.Core;
 
-    public class AdvancedPipelines
+    public class Pipelines
     {
         //we can chain multiple webactions to define the pipeline we
         //want for a request.

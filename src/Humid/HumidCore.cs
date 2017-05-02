@@ -1,6 +1,9 @@
 ﻿namespace Humid
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
+
     public static class Core
     {
         public static RequestType GET => RequestType.GET;
@@ -120,8 +123,21 @@
         
     }
 
+    public class Engine
+    {
+        private List<Route> routes = new List<Route>();
+        public IEnumerable<Route> Routes => routes;
+        public void AddRoute(Route route)
+        {
+            if(routes.Any(x=>x.Template == route.Template))
+                return;
+
+            routes.Add(route);
+        }
+
+    }
     public delegate Context WebAction(Context before);
 
     public delegate WebAction WebActionFeature<T>(T value);
     #endregion
-}
+} 
