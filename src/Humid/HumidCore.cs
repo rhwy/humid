@@ -106,12 +106,13 @@
         {
             Template = template;
             Pipeline = pipeline;
+            Filters = new List<Filter>{
+                DefaultFilter(template)
+            };
         }
         public Route(string template, Func<Context,Context> pipeline)
-        {
-            Template = template;
-            Pipeline = new WebAction(pipeline);
-        }
+        :this(template,new WebAction(pipeline))
+        { }
 
         public Context ApplyPipeline(Context before)
         => Pipeline.Invoke(before);
@@ -120,6 +121,13 @@
         {
             return Template == path;
         }
+
+        public static Filter DefaultFilter (string template)
+        {
+            return ((Context context, bool isMatch) previous)
+            => (previous.context, previous.isMatch && (previous.context.Request.Path == template));
+        }
+        public List<Filter> Filters {get;}
         
     }
 
@@ -136,8 +144,11 @@
         }
 
     }
+
     public delegate Context WebAction(Context before);
 
     public delegate WebAction WebActionFeature<T>(T value);
+
+    public delegate (Context context, bool isMatch) Filter((Context context, bool isMatch) previous);
     #endregion
 } 

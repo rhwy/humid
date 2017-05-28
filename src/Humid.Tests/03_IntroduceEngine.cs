@@ -14,7 +14,7 @@ namespace Humid.Tests
     ///</summary>
     public class IntroduceEngine
     {
-        //we can chain multiple webactions to define the pipeline we
+        //we can register routes in the engine
         //want for a request.
         [Theory]
         [InlineData("/a","/b",2)]
@@ -28,6 +28,32 @@ namespace Humid.Tests
             engine.AddRoute(new Route(path2,ok));
             
             Assert.Equal(countExpected, engine.Routes.Count());
+
+            
+        }
+
+        //in order to define more specifically routes, we can add filters
+        //to routes. filters will help to select the right route for the
+        //given request context. If no filter is defined then a default one
+        //will be used with only the path template.
+        [Theory] 
+        [InlineData("/a",true)]
+        [InlineData("/b",false)]
+        public void
+        routes_default_filter_is_only_path_template(string requestPath, bool isMatchExpected)
+        {
+            var newContext = Defaults.Context.With(path:requestPath);
+            
+            WebAction ok = c=>c.With(statusCode:200);
+
+            Filter defaultFilter = ((Context context, bool ismatch) previous)
+             => (previous.context,previous.context.Request.Path == "/a");
+ 
+            var route = new Route("/a", ok);
+            Assert.Equal(1,route.Filters.Count());
+            Filter routeFilter = route.Filters.FirstOrDefault();
+            Assert.Equal(defaultFilter((newContext, true)),routeFilter((newContext, true)));
+            Assert.Equal(isMatchExpected,routeFilter((newContext, true)).isMatch);
         }
     }
 }
