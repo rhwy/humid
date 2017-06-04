@@ -3,6 +3,8 @@ namespace Humid.Tests
     using Xunit;
     using static Humid.Core;
     using static FunctionalHelpers.Core;
+    using static Humid.WebActions;
+
     using System.Linq;
 
     ///<summary>
@@ -55,5 +57,28 @@ namespace Humid.Tests
             Assert.Equal(defaultFilter((newContext, true)),routeFilter((newContext, true)));
             Assert.Equal(isMatchExpected,routeFilter((newContext, true)).isMatch);
         }
+
+
+        [Fact]
+        public void Path_is_a_route_function_with_filter_path()
+        {
+            var newContext = Defaults.Context.With(path:"/a");
+            
+            WebAction ok = c=>c.With(statusCode:200).With(content:"hello");
+
+            Route route = Path("/a") | ok;
+
+            string content = null;
+            int status = -1;
+            if(route.Matches(path: "/a"))
+                (content,status) = route.ApplyPipeline(newContext); 
+            
+            
+            Assert.Equal("hello",content);
+            Assert.Equal(200,status);
+
+        }
+
+        
     }
 }

@@ -2,6 +2,8 @@ namespace Humid.Tests
 {
     using Xunit;
     using static Humid.Core;
+    using static Humid.WebActions;
+
     using static FunctionalHelpers.Core;
 
     public class Pipelines
@@ -21,10 +23,11 @@ namespace Humid.Tests
                 response : Response(ctx.Response.Content,200)
             );
 
-            var requestPipeline = f( (Context context) => 
-                context
-                | addContent("hello")
-                | ok
+            var requestPipeline = Pipeline( 
+                (context) => 
+                    context
+                    | addContent("hello")
+                    | ok
                 );
 
             var afterContext = requestPipeline(newRequestWithContext);
@@ -47,11 +50,12 @@ namespace Humid.Tests
                 response : Response(ctx.Response.Content,200)
             );
 
-            var requestPipeline = f( (Context context) => 
-                context
-                | addContent("hello")
-                | ok
-                );
+            var requestPipeline = Pipeline( 
+                (context) => 
+                    context
+                    | addContent("hello")
+                    | ok
+            );
 
             Route route = new Route(
                 template : "/hello",
@@ -72,10 +76,11 @@ namespace Humid.Tests
                 response : Response(ctx.Response.Content,200)
             );
 
-            var requestPipeline = f( (Context context) => 
-                context
-                | addContent("hello")
-                | ok
+            var requestPipeline = Pipeline( 
+                (context) => 
+                    context
+                    | addContent("hello")
+                    | ok
                 );
 
             Route route = new Route(

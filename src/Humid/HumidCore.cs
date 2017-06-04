@@ -29,11 +29,20 @@
         => new Context(request,response);
     }
 
+    public static class WebActions
+    {
+        public static Route Path(string path) 
+        {
+            return new Route(path);
+        } 
+
+        public static WebAction Pipeline(Func<Context,Context> action)
+            => new WebAction(action);
+    }
 
 
 
-
-    #region Web Models
+#region Web Models
     
     public enum RequestType 
     {
@@ -102,6 +111,10 @@
     {
         public string Template {get;}
         public WebAction Pipeline {get;}
+        public Route(string template) : this(template, null)
+        {
+        }
+
         public Route(string template, WebAction pipeline)
         {
             Template = template;
@@ -110,23 +123,33 @@
                 DefaultFilter(template)
             };
         }
-        public Route(string template, Func<Context,Context> pipeline)
-        :this(template,new WebAction(pipeline))
-        { }
+        // public Route(string template, Func<Context,Context> pipeline)
+        // :this(template,new WebAction(pipeline))
+        // { }
 
         public Context ApplyPipeline(Context before)
-        => Pipeline.Invoke(before);
+        => (Pipeline == null)? before : Pipeline.Invoke(before);
 
         public bool Matches(string path)
         {
             return Template == path;
         }
+        public static Route operator | (Route current, WebAction pipeline)
+        => new Route(
+                current.Template, 
+                current.Pipeline == null
+                ? pipeline
+                : new WebAction(
+                    c=> pipeline(current.Pipeline(c))
+            ));
 
         public static Filter DefaultFilter (string template)
         {
             return ((Context context, bool isMatch) previous)
             => (previous.context, previous.isMatch && (previous.context.Request.Path == template));
         }
+
+
         public List<Filter> Filters {get;}
         
     }
@@ -151,4 +174,7 @@
 
     public delegate (Context context, bool isMatch) Filter((Context context, bool isMatch) previous);
     #endregion
+
+
+
 } 
