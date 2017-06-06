@@ -10,7 +10,6 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\FunctionalHelpers\src\FunctionalHelpers\FunctionalHelpers.csproj" />
     <ProjectReference Include="..\Humid\Humid.csproj" />
   </ItemGroup>
   <ItemGroup>

@@ -10,6 +10,7 @@
         public static RequestType POST => RequestType.POST;
         public static RequestType DELETE => RequestType.DELETE;
         public static RequestType HEAD => RequestType.HEAD;
+        public static RequestType PUT => RequestType.PUT;
         public static RequestType DEFAULT_REQUEST_TYPE => RequestType.UNKNOWN;
 
         public static class Defaults
@@ -46,7 +47,7 @@
     
     public enum RequestType 
     {
-        GET, POST, DELETE, HEAD, UNKNOWN
+        GET, POST, DELETE, HEAD, PUT, UNKNOWN
     }
 
     public struct Request
@@ -119,10 +120,16 @@
         {
             Template = template;
             Pipeline = pipeline;
-            Filters = new List<Filter>{
-                DefaultFilter(template)
-            };
+            Filters = new List<Filter>{};
+            if(!string.IsNullOrEmpty(template))
+            {
+                Filters.Add(DefaultFilter(template));
+            }
+            
         }
+
+        public static Route Empty => new Route(string.Empty);
+        
         // public Route(string template, Func<Context,Context> pipeline)
         // :this(template,new WebAction(pipeline))
         // { }
@@ -134,6 +141,19 @@
         {
             return Template == path;
         }
+
+        public bool Matches(Context currentContext)
+        {
+            var itIsOkToContinue = true;
+            Context updatedContext = Context.Default;
+            foreach (var filter in Filters)
+            {
+                if(!itIsOkToContinue) return false;
+                (updatedContext,itIsOkToContinue) = filter((currentContext, itIsOkToContinue));
+            }
+            return true;
+        }
+
         public static Route operator | (Route current, WebAction pipeline)
         => new Route(
                 current.Template, 
@@ -142,6 +162,12 @@
                 : new WebAction(
                     c=> pipeline(current.Pipeline(c))
             ));
+        
+        public static Route operator | (Route current, Filter filter)
+        {
+            current.Filters.Add(filter);
+            return current;
+        }
 
         public static Filter DefaultFilter (string template)
         {
@@ -154,7 +180,7 @@
         
     }
 
-    public class Engine
+    public class Router
     {
         private List<Route> routes = new List<Route>();
         public IEnumerable<Route> Routes => routes;

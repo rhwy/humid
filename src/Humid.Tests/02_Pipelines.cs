@@ -4,7 +4,7 @@ namespace Humid.Tests
     using static Humid.Core;
     using static Humid.WebActions;
 
-    using static FunctionalHelpers.Core;
+    //using static FunctionalHelpers.Core;
 
     public class Pipelines
     {

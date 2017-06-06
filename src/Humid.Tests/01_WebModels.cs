@@ -2,8 +2,8 @@ namespace Humid.Tests
 {
     using System;
     using Xunit;
-    using FunctionalHelpers;
-    using static FunctionalHelpers.Core;
+    //using FunctionalHelpers;
+   // using static FunctionalHelpers.Core;
     using static  Humid.Core;
 
     public class TypesTests
