@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text.RegularExpressions;
 
     public static class Core
     {
@@ -41,6 +42,48 @@
             => new WebAction(action);
     }
 
+    public delegate string TokensToRegex(string tokensExpressions);
+    public delegate Dictionary<string,string> ExtractTokensValuesFromPath(string route, string path);
+    public static class Helpers
+    {
+        public static TokensToRegex TokensToRegex {get;set;} = tokensToRegex;
+        private static string tokensToRegex(string tokensExpressions)
+        {
+            string current = "";
+            bool take = false;
+            string result = "";
+            foreach(char a in tokensExpressions)
+            {
+                if(a == '{') take = true;
+                if(a == '}') {
+                    take = false; 
+                    result += $"(?<{current}>[a-zA-Z0-9-_]*)";
+                    current = ""; 
+                }
+                if(!take &&  a!='}') { result += a;}
+                else {
+                    if( a!='{' &&  a!='}') current += a;
+                }
+            } 
+            return result;
+        }
+        public static ExtractTokensValuesFromPath ExtractTokensValuesFromPath {get;set;} = extractTokensValuesFromPath;
+        private static Dictionary<string,string> extractTokensValuesFromPath(string route, string path)
+        {
+            var routeExpression = new Regex(route);
+            var routeParams = new Dictionary<string,string>();
+            if(!routeExpression.IsMatch(path)) return routeParams;
+            
+            var names = routeExpression.GetGroupNames();
+            var values = routeExpression.Split(path);
+            foreach(var n in routeExpression.GetGroupNumbers())
+            {
+                routeParams.Add(names[n],values[n]);
+            }
+            routeParams.Remove("0");
+            return routeParams;
+        }
+    }
 
 
 #region Web Models
@@ -123,7 +166,7 @@
             Filters = new List<Filter>{};
             if(!string.IsNullOrEmpty(template))
             {
-                Filters.Add(DefaultFilter(template));
+                Filters.Add(PathFilter(template));
             }
             
         }
@@ -148,8 +191,9 @@
             Context updatedContext = Context.Default;
             foreach (var filter in Filters)
             {
-                if(!itIsOkToContinue) return false;
                 (updatedContext,itIsOkToContinue) = filter((currentContext, itIsOkToContinue));
+                if(!itIsOkToContinue) return false;
+                
             }
             return true;
         }
@@ -169,10 +213,18 @@
             return current;
         }
 
-        public static Filter DefaultFilter (string template)
+        public static Filter PathFilter (string template)
         {
+            string regExSalt = "/_";
+            string regExTemplate = Helpers.TokensToRegex(template+regExSalt);
+            var routeExpression = new Regex(regExTemplate);
+            
             return ((Context context, bool isMatch) previous)
-            => (previous.context, previous.isMatch && (previous.context.Request.Path == template));
+            => (
+                    previous.context, 
+                    previous.isMatch 
+                    && routeExpression.IsMatch(previous.context.Request.Path+regExSalt)
+            );
         }
 
 
