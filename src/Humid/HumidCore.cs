@@ -38,8 +38,28 @@
             return new Route(path);
         } 
 
+        public static Route Get(string path)
+        {
+            return Path(path) | Verbs(Core.GET);
+        }
         public static WebAction Pipeline(Func<Context,Context> action)
             => new WebAction(action);
+
+        public static Filter Verbs (params RequestType[] requestTypes)
+        {
+            return ((Context context, bool ismatch) previous)
+                => (
+                    previous.context,
+                    requestTypes.Any(
+                        x=> x == previous.context.Request.Type));
+        }
+
+        public static WebAction Do(Func<Context,Context> action)
+        => new WebAction(action);
+
+        public static WebAction OK
+        => new WebAction(c =>c.With(statusCode:200));
+            
     }
 
     public delegate string TokensToRegex(string tokensExpressions);

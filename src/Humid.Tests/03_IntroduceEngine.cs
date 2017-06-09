@@ -111,19 +111,10 @@ namespace Humid.Tests
         {
             var testContext = Defaults.Context.With(path:"/a",type:GET);
             
-            Filter verbs (params RequestType[] requestTypes)
-            {
-                return ((Context context, bool ismatch) previous)
-                 => (
-                        previous.context,
-                        requestTypes.Any(
-                            x=> x == previous.context.Request.Type));
-            }
-
             WebAction ok = c=>c.With(statusCode:200).With(content:"hello");
 
             Route route = Path("/a") 
-                        | verbs(GET,POST)
+                        | Verbs(GET,POST)
                         | ok;
 
             string content = null;

@@ -93,27 +93,16 @@ namespace Humid.Tests
         [Fact]
         public void can_consume_routeparams_within_a_webaction()
         {
-            var testContext = Defaults.Context.With(path:"/hello/world/42",type:GET);
+            var testContext = Defaults.Context.With(
+                path:"/hello/world/42",
+                type:GET);
             
-            Filter verbs (params RequestType[] requestTypes)
-            {
-                return ((Context context, bool ismatch) previous)
-                 => (
-                        previous.context,
-                        requestTypes.Any(
-                            x=> x == previous.context.Request.Type));
-            }
-
-
-            WebAction ok = c =>c.With(statusCode:200);
-            WebAction doAction = ctx => {
-                var name = ctx.Params<string>("name","hell");
-                return ctx.With(content: $"hello {name}");
-            };
-            Route route = Path("/hello/{name}/{id}") 
-                        | verbs(GET,POST)
-                        | doAction
-                        | ok;
+            Route route = Get("/hello/{name}/{id}") 
+                            | Do(ctx => {
+                                    var name = ctx.Params<string>("name","hell");
+                                    return ctx.With(content: $"hello {name}");
+                                })
+                            | OK;
 
             string content = null;
             int status = -1;
