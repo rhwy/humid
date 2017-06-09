@@ -21,8 +21,8 @@
             public static Response Response => Response.Default;
         }
 
-        public static Request Request(RequestType type, string route)
-        => new Request(type,route);
+        public static Request Request(RequestType type, string route, Dictionary<string,string> routeParams = null)
+        => new Request(type,route, routeParams);
 
         public static Response Response(string content, int statusCode)
         => new Response(content,statusCode);
@@ -43,7 +43,8 @@
     }
 
     public delegate string TokensToRegex(string tokensExpressions);
-    public delegate Dictionary<string,string> ExtractTokensValuesFromPath(string route, string path);
+    public delegate Dictionary<string,string> ExtractTokensValuesFromExpression(string regEx, string path);
+    public delegate Dictionary<string,string> ExtractTokensFromPath(string route, string path);
     public static class Helpers
     {
         public static TokensToRegex TokensToRegex {get;set;} = tokensToRegex;
@@ -67,10 +68,12 @@
             } 
             return result;
         }
-        public static ExtractTokensValuesFromPath ExtractTokensValuesFromPath {get;set;} = extractTokensValuesFromPath;
-        private static Dictionary<string,string> extractTokensValuesFromPath(string route, string path)
+        public static ExtractTokensValuesFromExpression ExtractTokensValuesFromExpression {get;set;} = extractTokensValuesFromExpression;
+        private static Dictionary<string,string> extractTokensValuesFromExpression(string regEx, string path)
         {
-            var routeExpression = new Regex(route);
+            string regExSalt = "/_";
+            path = path + regExSalt;
+            var routeExpression = new Regex(regEx+regExSalt);
             var routeParams = new Dictionary<string,string>();
             if(!routeExpression.IsMatch(path)) return routeParams;
             
@@ -82,6 +85,21 @@
             }
             routeParams.Remove("0");
             return routeParams;
+        }
+
+        public static ExtractTokensFromPath ExtractTokensFromPath {get;set;} = extractTokensFromPath;
+        private static Dictionary<string,string> extractTokensFromPath(string route, string path)
+        {
+            return extractTokensValuesFromExpression(tokensToRegex(route),path);
+        }
+
+        public static Func<string,string,bool> RouteIsMatch {get;set;} = routeIsMatch;
+        private static bool routeIsMatch(string route, string path)
+        {
+            string regExSalt = "/_";
+            path = path + regExSalt;
+            var routeExpression = new Regex(tokensToRegex(route+regExSalt));
+            return routeExpression.IsMatch(path);
         }
     }
 
@@ -97,12 +115,15 @@
     {
         public RequestType Type {get;}
         public string Path {get;}
-        public Request(RequestType type, string path)
+        public Dictionary<string,string> RouteParams {get;} 
+        public Request(RequestType type, string path,Dictionary<string,string> routeParams)
         {
-            Type = type; Path = path;
+            Type = type; 
+            Path = path;
+            RouteParams = routeParams ?? new Dictionary<string,string>();
         }
         public static Request Default 
-        => new Request(RequestType.UNKNOWN, string.Empty);
+        => new Request(RequestType.UNKNOWN, string.Empty,new Dictionary<string,string>());
     }
 
     public struct Response
@@ -124,6 +145,26 @@
         {
             Request = request; Response = response;
         }
+        public T Params<T>(string key, T defaultValue = default(T))
+        {
+            object outputValue = default(T);
+            if(Request.RouteParams.ContainsKey(key))
+            {
+                outputValue = Request.RouteParams[key];
+                try {
+                    if(defaultValue is string)
+                        return (T)outputValue;
+                    return (T)Convert.ChangeType(outputValue,typeof(T));
+                }
+                catch{
+                    return defaultValue;
+                }
+            }
+            return defaultValue;
+        }
+
+
+
 
         public static Context Default 
         => new Context(Request.Default, Response.Default);
@@ -132,11 +173,13 @@
                 RequestType? type = null, 
                 string path = null,
                 string content = null,
-                int? statusCode = null)
+                int? statusCode = null,
+                Dictionary<string,string> routeParams = null)
         => new Context(
                 new Request(
                     type ?? Request.Type,
-                    path ?? Request.Path),
+                    path ?? Request.Path,
+                    routeParams ?? Request.RouteParams),
                 new Response(
                     content ?? Response.Content,
                     statusCode ?? Response.StatusCode));
@@ -144,6 +187,7 @@
         public static Context operator | (Context before, WebAction next)
         => next(before);
 
+        
         public void Deconstruct(out string content, out int statusCode)
         {
             content = Response.Content;
@@ -178,7 +222,12 @@
         // { }
 
         public Context ApplyPipeline(Context before)
-        => (Pipeline == null)? before : Pipeline.Invoke(before);
+        {
+            var routeParams = Helpers.ExtractTokensFromPath(
+                Template,before.Request.Path);
+            var contextWithParams = before.With(routeParams : routeParams);        
+            return (Pipeline == null)? contextWithParams : Pipeline.Invoke(contextWithParams);
+        }
 
         public bool Matches(string path)
         {
@@ -188,10 +237,10 @@
         public bool Matches(Context currentContext)
         {
             var itIsOkToContinue = true;
-            Context updatedContext = Context.Default;
+            Context updatedContext = currentContext;
             foreach (var filter in Filters)
             {
-                (updatedContext,itIsOkToContinue) = filter((currentContext, itIsOkToContinue));
+                (updatedContext,itIsOkToContinue) = filter((updatedContext, itIsOkToContinue));
                 if(!itIsOkToContinue) return false;
                 
             }
@@ -199,14 +248,17 @@
         }
 
         public static Route operator | (Route current, WebAction pipeline)
-        => new Route(
+        {
+            var route = new Route(
                 current.Template, 
                 current.Pipeline == null
                 ? pipeline
                 : new WebAction(
                     c=> pipeline(current.Pipeline(c))
             ));
-        
+            route.Filters = current.Filters;
+            return route;
+        }
         public static Route operator | (Route current, Filter filter)
         {
             current.Filters.Add(filter);
@@ -215,20 +267,24 @@
 
         public static Filter PathFilter (string template)
         {
-            string regExSalt = "/_";
-            string regExTemplate = Helpers.TokensToRegex(template+regExSalt);
-            var routeExpression = new Regex(regExTemplate);
-            
             return ((Context context, bool isMatch) previous)
-            => (
-                    previous.context, 
-                    previous.isMatch 
-                    && routeExpression.IsMatch(previous.context.Request.Path+regExSalt)
-            );
+            => {
+                var routeMatch = Helpers.RouteIsMatch(template,previous.context.Request.Path);
+                if(routeMatch)
+                {
+                    var routeParams = Helpers.ExtractTokensFromPath(template,previous.context.Request.Path);
+                    return (
+                        previous.context.With(routeParams: routeParams), 
+                        previous.isMatch);
+                }
+                return (
+                    previous.context,false
+                );
+            };
         }
 
 
-        public List<Filter> Filters {get;}
+        public List<Filter> Filters {get;set;}
         
     }
 

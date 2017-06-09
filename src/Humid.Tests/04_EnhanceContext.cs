@@ -8,6 +8,7 @@ namespace Humid.Tests
     using static Humid.Helpers;
 
     using System.Linq;
+    using System.Collections.Generic;
 
     ///<summary>
     ///Now we have the basics parts of our web lib but to make it really usable, we need:
@@ -41,7 +42,7 @@ namespace Humid.Tests
         [InlineData("/hello/(?<name>[a-zA-Z0-9-_]*)","/hello/world","name","world")]
         public void extract_values_from_rex_to_dict(string rex, string path, string key, string value)
         {
-            var kv = ExtractTokensValuesFromPath(rex,path);
+            var kv = ExtractTokensValuesFromExpression(rex,path);
             Assert.Equal(kv.Keys.FirstOrDefault(), "name");
             Assert.Equal(kv.Values.FirstOrDefault(), "world");
         }
@@ -63,5 +64,66 @@ namespace Humid.Tests
             //
         }
 
+        //now that we have a tokenized matcher, we need to add this extracted data
+        //to the context request as RouteParams property. The structure should
+        //internally store that data as a Dictionary<string,string> but as users, 
+        //we'll prefer to have an helper method on context to extract values safely
+        //and possibelly with a cast:
+        [Fact]
+        public void can_extract_route_params_values_safely_with_cast()
+        {
+            var routeParams = new Dictionary<string,string>{
+                ["name"] = "paul",
+                ["id"] = "42"
+            };
+            var testContext = Defaults.Context.With(routeParams : routeParams );
+            var name = testContext.Params<string>("name");
+            var id = testContext.Params<int>("id");
+            var missingValue = testContext.Params<string>("missing");
+            var missingValueWithFallback = testContext.Params<int>("value",123);
+
+            Assert.Equal("paul",name);
+            Assert.Equal(42,id);
+            Assert.Equal(null,missingValue);
+            Assert.Equal(123,missingValueWithFallback);
+        }
+
+        //it should be interesting now to put all the things together and use these
+        //route parameters for doing a real thing within a route
+        [Fact]
+        public void can_consume_routeparams_within_a_webaction()
+        {
+            var testContext = Defaults.Context.With(path:"/hello/world/42",type:GET);
+            
+            Filter verbs (params RequestType[] requestTypes)
+            {
+                return ((Context context, bool ismatch) previous)
+                 => (
+                        previous.context,
+                        requestTypes.Any(
+                            x=> x == previous.context.Request.Type));
+            }
+
+
+            WebAction ok = c =>c.With(statusCode:200);
+            WebAction doAction = ctx => {
+                var name = ctx.Params<string>("name","hell");
+                return ctx.With(content: $"hello {name}");
+            };
+            Route route = Path("/hello/{name}/{id}") 
+                        | verbs(GET,POST)
+                        | doAction
+                        | ok;
+
+            string content = null;
+            int status = -1;
+
+            if(route.Matches(testContext))
+                (content,status) = route.ApplyPipeline(testContext); 
+            
+            Assert.Equal("hello world",content);
+            Assert.Equal(200,status);
+
+        }
     }
 }

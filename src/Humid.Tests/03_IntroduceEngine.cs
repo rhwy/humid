@@ -48,13 +48,10 @@ namespace Humid.Tests
             
             WebAction ok = c=>c.With(statusCode:200);
 
-            Filter pathFilter = ((Context context, bool ismatch) previous)
-             => (previous.context,previous.context.Request.Path == "/a");
- 
+            
             var route = new Route("/a", ok);
             Assert.Equal(1,route.Filters.Count());
             Filter routeFilter = route.Filters.FirstOrDefault();
-            Assert.Equal(pathFilter((newContext, true)),routeFilter((newContext, true)));
             Assert.Equal(isMatchExpected,routeFilter((newContext, true)).isMatch);
         }
 
@@ -112,7 +109,7 @@ namespace Humid.Tests
         [Fact]
         public void Path_is_a_route_function_with_filter_path()
         {
-            var testContext = Defaults.Context.With(path:"/a",type:PUT);
+            var testContext = Defaults.Context.With(path:"/a",type:GET);
             
             Filter verbs (params RequestType[] requestTypes)
             {
