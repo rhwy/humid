@@ -62,13 +62,15 @@
             
     }
 
-    public delegate string TokensToRegex(string tokensExpressions);
+    public delegate string TransformRouteExpression(string tokensExpressions);
     public delegate Dictionary<string,string> ExtractTokensValuesFromExpression(string regEx, string path);
     public delegate Dictionary<string,string> ExtractTokensFromPath(string route, string path);
+    public delegate Dictionary<string,string> ParseQueryString(string queryString);
+
     public static class Helpers
     {
-        public static TokensToRegex TokensToRegex {get;set;} = tokensToRegex;
-        private static string tokensToRegex(string tokensExpressions)
+        public static TransformRouteExpression TransformRouteExpression {get;set;} = transformRouteExpression;
+        private static string transformRouteExpression(string tokensExpressions)
         {
             string current = "";
             bool take = false;
@@ -110,7 +112,7 @@
         public static ExtractTokensFromPath ExtractTokensFromPath {get;set;} = extractTokensFromPath;
         private static Dictionary<string,string> extractTokensFromPath(string route, string path)
         {
-            return extractTokensValuesFromExpression(tokensToRegex(route),path);
+            return extractTokensValuesFromExpression(transformRouteExpression(route),path);
         }
 
         public static Func<string,string,bool> RouteIsMatch {get;set;} = routeIsMatch;
@@ -118,8 +120,30 @@
         {
             string regExSalt = "/_";
             path = path + regExSalt;
-            var routeExpression = new Regex(tokensToRegex(route+regExSalt));
+            var routeExpression = new Regex(transformRouteExpression(route+regExSalt));
             return routeExpression.IsMatch(path);
+        }
+
+        public static ParseQueryString ParseQueryString {get;set;} = parseQueryString;
+        private static Dictionary<string,string> parseQueryString(string queryString)
+        {
+            var result = new Dictionary<string,string>();
+            if(queryString.StartsWith("?"))
+                queryString = queryString.Substring(1);
+            var keyValues = queryString.Split("&".ToCharArray());
+            foreach (var keyValue in keyValues)
+            {
+                var temp = keyValue.Split("=".ToCharArray());
+                string key = null, value = null;
+
+                if(temp.Length>0)
+                    key = temp[0];
+                if(temp.Length==2)
+                    value = temp[1];
+                if(!string.IsNullOrEmpty(key))
+                    result.Add(key,value);
+            }
+            return result;
         }
     }
 
@@ -135,15 +159,21 @@
     {
         public RequestType Type {get;}
         public string Path {get;}
+        public string QueryString {get;}
+        public Dictionary<string,string> Query {get;}
         public Dictionary<string,string> RouteParams {get;} 
-        public Request(RequestType type, string path,Dictionary<string,string> routeParams)
+        public Request(RequestType type, string path,
+            Dictionary<string,string> routeParams, string query = null)
         {
             Type = type; 
             Path = path;
             RouteParams = routeParams ?? new Dictionary<string,string>();
+            QueryString = query ?? string.Empty;
+            Query = Helpers.ParseQueryString(QueryString);
         }
+        
         public static Request Default 
-        => new Request(RequestType.UNKNOWN, string.Empty,new Dictionary<string,string>());
+        => new Request(RequestType.UNKNOWN, string.Empty,new Dictionary<string,string>(), string.Empty);
     }
 
     public struct Response
@@ -183,6 +213,24 @@
             return defaultValue;
         }
 
+        public T Query<T>(string key, T defaultValue = default(T))
+        {
+            object outputValue = default(T);
+            if(Request.Query.ContainsKey(key))
+            {
+                outputValue = Request.Query[key];
+                try {
+                    if(defaultValue is string)
+                        return (T)outputValue;
+                    return (T)Convert.ChangeType(outputValue,typeof(T));
+                }
+                catch{
+                    return defaultValue;
+                }
+            }
+            return defaultValue;
+        }
+
 
 
 
@@ -194,12 +242,14 @@
                 string path = null,
                 string content = null,
                 int? statusCode = null,
-                Dictionary<string,string> routeParams = null)
+                Dictionary<string,string> routeParams = null,
+                string query = null)
         => new Context(
                 new Request(
                     type ?? Request.Type,
                     path ?? Request.Path,
-                    routeParams ?? Request.RouteParams),
+                    routeParams ?? Request.RouteParams,
+                    query ?? Request.QueryString),
                 new Response(
                     content ?? Response.Content,
                     statusCode ?? Response.StatusCode));

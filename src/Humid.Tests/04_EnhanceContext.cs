@@ -32,7 +32,7 @@ namespace Humid.Tests
         [InlineData("/hello/{id}/bla","/hello/(?<id>[a-zA-Z0-9-_]*)/bla")]
         public void tokenizer_helper_can_transform_stringWithTokens_in_regex_string(string inputPath, string expectedRegex)
         {
-            string actual = TokensToRegex(inputPath);
+            string actual = TransformRouteExpression(inputPath);
             Assert.Equal(expectedRegex,actual);
         }
 
@@ -113,6 +113,45 @@ namespace Humid.Tests
             Assert.Equal("hello world",content);
             Assert.Equal(200,status);
 
+        }
+
+        //just after route params, handling querystrings seems to be a next logical path
+        [Fact]
+        public void can_parse_queryStrings()
+        {
+            string queryString = "id=42&name=marvin";
+            var result = ParseQueryString(queryString);
+            Assert.Equal(2, result.Count());
+            Assert.Equal("marvin",result["name"]);
+            Assert.Equal("42",result["id"]);
+        }
+
+        [Fact]
+        public void can_consume_querystring_within_a_webaction()
+        {
+            var testContext = Defaults.Context.With(
+                path:"/hello",
+                query:"id=42&name=marvin",
+                type:GET);
+
+            Assert.Equal("id=42&name=marvin", testContext.Request.QueryString);
+
+            Route route = Get("/hello") 
+                            | Do(ctx => {
+                                    var name = ctx.Query<string>("name","hell");
+                                    var value = ctx.Query<int>("id",0);
+                                    return ctx.With(content: $"hello {name}, the answer is {value}");
+                                })
+                            | OK;
+
+            string content = null;
+            int status = -1;
+
+            if(route.Matches(testContext))
+                (content,status) = route.ApplyPipeline(testContext); 
+            
+            Assert.Equal("hello marvin, the answer is 42",content);
+            Assert.Equal(200,status);
         }
     }
 }
