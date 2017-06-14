@@ -66,6 +66,7 @@
     public delegate Dictionary<string,string> ExtractTokensValuesFromExpression(string regEx, string path);
     public delegate Dictionary<string,string> ExtractTokensFromPath(string route, string path);
     public delegate Dictionary<string,string> ParseQueryString(string queryString);
+    public delegate Dictionary<string,string> KeyValueStringArrayToDictionary(IEnumerable<string> list);
 
     public static class Helpers
     {
@@ -145,6 +146,22 @@
             }
             return result;
         }
+
+        public static KeyValueStringArrayToDictionary ExtractHeadersToDictionary {get;set;} = extractHeadersToDictionary;
+        private static Dictionary<string,string> extractHeadersToDictionary(IEnumerable<string> list)
+        {
+            return list.Select(x=> {
+                if(string.IsNullOrEmpty(x)) return (key:"",value:"");
+                var items = x.Split(":".ToCharArray());
+                if(items.Length == 1)
+                    return (key:items[0],value:"");
+                if(items.Length == 2)
+                    return (key:items[0],value:items[1]);
+                return (key:"",value:"");
+            })
+            .Where(x=>!string.IsNullOrEmpty(x.key))
+            .ToDictionary(x=>x.key, x=>x.value) ?? new Dictionary<string,string>();
+        }
     }
 
 
@@ -162,18 +179,22 @@
         public string QueryString {get;}
         public Dictionary<string,string> Query {get;}
         public Dictionary<string,string> RouteParams {get;} 
+        public Dictionary<string,string> Headers {get;}
         public Request(RequestType type, string path,
-            Dictionary<string,string> routeParams, string query = null)
+            Dictionary<string,string> routeParams, 
+            string query = null,
+            IEnumerable<string> headers=null)
         {
             Type = type; 
             Path = path;
             RouteParams = routeParams ?? new Dictionary<string,string>();
             QueryString = query ?? string.Empty;
             Query = Helpers.ParseQueryString(QueryString);
+            Headers = Helpers.ExtractHeadersToDictionary((headers == null )? new string[]{}: headers) ?? new Dictionary<string,string>();
         }
         
         public static Request Default 
-        => new Request(RequestType.UNKNOWN, string.Empty,new Dictionary<string,string>(), string.Empty);
+        => new Request(RequestType.UNKNOWN, string.Empty,new Dictionary<string,string>(), string.Empty,new string[]{});
     }
 
     public struct Response
@@ -243,13 +264,15 @@
                 string content = null,
                 int? statusCode = null,
                 Dictionary<string,string> routeParams = null,
-                string query = null)
+                string query = null,
+                IEnumerable<string> headers = null)
         => new Context(
                 new Request(
                     type ?? Request.Type,
                     path ?? Request.Path,
                     routeParams ?? Request.RouteParams,
-                    query ?? Request.QueryString),
+                    query ?? Request.QueryString,
+                    headers),
                 new Response(
                     content ?? Response.Content,
                     statusCode ?? Response.StatusCode));

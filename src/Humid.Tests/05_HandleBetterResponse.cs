@@ -1,3 +1,9 @@
+using Xunit;
+using System.Reflection;
+using System;
+using System.Linq;
+using static Humid.Core;
+
 namespace Humid.Tests
 {
     public class HandleBetterResponse
@@ -12,5 +18,18 @@ namespace Humid.Tests
         //- add an object response
         //- change signature of Do webaction to Func<Context,object> and do the 
         //   transformation to string while applying action
+
+
+        [Fact]
+        public void context_should_carry_very_simple_headers()
+        {
+            var headers = new[]{ "accept:application/json","accept-language:en-EN"};
+            var testContext = Defaults.Context.With(headers : headers);
+
+            Assert.Equal(2,testContext.Request.Headers.Count());
+            Assert.Equal("application/json",testContext.Request.Headers["accept"]);
+            Assert.Equal("en-EN",testContext.Request.Headers["accept-language"]);
+        }
+
     }
 }
