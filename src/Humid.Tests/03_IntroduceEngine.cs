@@ -163,5 +163,30 @@ namespace Humid.Tests
             
             Assert.Equal(expectedStatusCode,status);
        }
+
+      [Fact]
+      public void easy_route_adding()
+      {
+          var testContext = Defaults.Context.With(path:"/b",type:GET);
+           
+          var emptyRouter = new Router();
+
+          var router = emptyRouter
+          + (new Route("/a",OK) | Content("I'm A"))
+          + (new Route("/b",OK) | Content("I'm B"));
+          
+          Assert.Equal(2, router.Routes.Count());
+
+          var route = router.FindRoute(testContext);
+
+          string content = null;
+            int status = -1;
+
+           (content,status) = route.ApplyPipeline(testContext); 
+            
+            Assert.Equal(200,status);
+            Assert.Equal("I'm B",content);
+
+      }
     }
 }

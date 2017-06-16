@@ -61,8 +61,10 @@
         => new WebAction(c =>c.With(statusCode:200));
             
         public static WebAction NOT_FOUND
-        => new WebAction(c => c.With(statusCode:404));
+        => new WebAction(c => c.With(statusCode:404,content:"Page Not Found"));
 
+        public static WebAction Content(string content)
+        => new WebAction(c => c.With(content : content));
     }
 
     public delegate string TransformRouteExpression(string tokensExpressions);
@@ -401,6 +403,12 @@
             var routeFound =  Routes.Any(x=>x.Matches(context));
 
             return routeFound ? Routes.First(x=>x.Matches(context)) : routeNotFound;
+        }
+
+        public static Router operator + (Router current, Route newRoute)
+        {
+            current.AddRoute(newRoute);
+            return current;
         }
     }
 
