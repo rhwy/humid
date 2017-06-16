@@ -129,6 +129,39 @@ namespace Humid.Tests
 
         }
 
-        
+       [Fact]
+       public void route_not_found_is_a_predefined_webaction()
+       {
+           var testContext = Defaults.Context.With(path:"/a",type:GET);
+            
+           var afterContext = NOT_FOUND(testContext);
+          
+           Assert.Equal(404,afterContext.Response.StatusCode);
+       } 
+
+       [Theory]
+       [InlineData("/a",404)]
+       [InlineData("/b",200)]
+       [InlineData("/c",200)]
+       [InlineData("/zzzz",404)]
+       public void router_should_return_route_or_not_found(string path, int expectedStatusCode)
+       {
+           var testContext = Defaults.Context.With(path:path,type:GET);
+           var router = new Router();
+            WebAction ok = c=>c.With(statusCode:200);
+            router.AddRoute(new Route("/b",ok));
+            router.AddRoute(new Route("/c",ok));
+
+            // Route routeNotFound = Route.Empty | NOT_FOUND;
+
+            var route = router.FindRoute(testContext);
+
+            string content = null;
+            int status = -1;
+
+           (content,status) = route.ApplyPipeline(testContext); 
+            
+            Assert.Equal(expectedStatusCode,status);
+       }
     }
 }

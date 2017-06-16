@@ -60,6 +60,9 @@
         public static WebAction OK
         => new WebAction(c =>c.With(statusCode:200));
             
+        public static WebAction NOT_FOUND
+        => new WebAction(c => c.With(statusCode:404));
+
     }
 
     public delegate string TransformRouteExpression(string tokensExpressions);
@@ -392,7 +395,13 @@
 
             routes.Add(route);
         }
+        private static Route routeNotFound = (Route.Empty | WebActions.NOT_FOUND);
+        public Route FindRoute(Context context)
+        {
+            var routeFound =  Routes.Any(x=>x.Matches(context));
 
+            return routeFound ? Routes.First(x=>x.Matches(context)) : routeNotFound;
+        }
     }
 
     public delegate Context WebAction(Context before);
