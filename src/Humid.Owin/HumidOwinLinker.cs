@@ -31,9 +31,10 @@ namespace Humid.Owin
             Func<IDictionary<string, object>, Task> owinPlug = (env) => {
 
                 var requestPath = (string)env["owin.RequestPathBase"] + (string)env["owin.RequestPath"];
+                var method = (string)env["owin.RequestMethod"];
                 var content = string.Empty;
 
-                var beforeContext = Defaults.Context.With(path:requestPath);
+                var beforeContext = Defaults.Context.With(path:requestPath, type:(RequestType)Enum.Parse(typeof(RequestType),method));
                 var route = router.FindRoute(beforeContext);
 
                 var afterContext = route.ApplyPipeline(beforeContext);

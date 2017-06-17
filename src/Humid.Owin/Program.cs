@@ -30,15 +30,16 @@ namespace Humid.Owin
     {
         public void Configure(IApplicationBuilder app)
         {
-            app.UseHumid(routes => {
-                return routes 
+            app.UseHumid(routes => 
+                routes 
                 + ( Get("/a") 
-                     | OK 
-                     | Content("I'm A"))
-                + ( Get("/b") 
-                     | OK 
-                     | Content("I'm B"));
-            });
+                     | Content("Hello A")
+                     | OK )
+                + (new Route("/b",OK)
+                     | Content("Hello B"))
+                + (new Route("/hello/{name}",OK)
+                     | Do(ctx => ctx.With(content: $"Hello {ctx.Params<string>("name", "world").ToUpper()}")))
+            );
         }
 
         public IServiceProvider ConfigureServices(IServiceCollection services)

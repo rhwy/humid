@@ -88,6 +88,37 @@ namespace Humid.Tests
             Assert.Equal(123,missingValueWithFallback);
         }
 
+        //in order to write shorter route definitions, will add some helpers relatives 
+        //to the verbs we use that should set the path template along with the verb
+        //this should be equivalent:
+        // new Route("/a", GET) <=> Get("/a")
+        [Theory]
+        [InlineData("/hello",RequestType.GET,"World",200)]
+        [InlineData("/hello",RequestType.UNKNOWN,null,-1)]
+        [InlineData("/other",RequestType.GET,null,-1)]
+        public void can_define_routes_with_predefined_verbs(
+            string path, RequestType verb, string expectedContent, int expectedStatusCode
+        )
+        {
+            var testContext = Defaults.Context.With(
+                path:path,
+                type:verb);
+            
+            Route route = Get("/hello") 
+                            | Content("World")
+                            | OK;
+
+            string content = null;
+            int status = -1;
+
+            if(route.Matches(testContext))
+                (content,status) = route.ApplyPipeline(testContext); 
+            
+            Assert.Equal(expectedContent,content);
+            Assert.Equal(expectedStatusCode,status);
+        }
+
+
         //it should be interesting now to put all the things together and use these
         //route parameters for doing a real thing within a route
         [Fact]
