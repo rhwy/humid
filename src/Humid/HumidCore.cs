@@ -57,6 +57,11 @@
         public static WebAction Do(Func<Context,Context> action)
         => new WebAction(action);
 
+        public static WebAction Do(Func<Context,dynamic> action)
+        {
+            return new WebAction(c => c.With(model:action(c)));
+        }
+
         public static WebAction OK
         => new WebAction(c =>c.With(statusCode:200));
             
@@ -220,9 +225,11 @@
     {
         public int StatusCode {get;}
         public string Content {get;}
-        public Response(string content, int statusCode)
+        public dynamic Model {get;}
+        public Response(string content, int statusCode, dynamic model = null)
         {
             Content = content; StatusCode = statusCode;
+            Model = model;
         }
         public static Response Default => new Response(string.Empty, 0);
     }
@@ -285,7 +292,8 @@
                 Dictionary<string,string> routeParams = null,
                 string query = null,
                 IEnumerable<string> stringHeaders = null,
-                IDictionary<string,string[]> headers = null)
+                IDictionary<string,string[]> headers = null,
+                dynamic model = null)
         => new Context(
                 new Request(
                     type ?? Request.Type,
@@ -295,7 +303,8 @@
                     headers ?? (Helpers.ExtractHeadersToDictionary((stringHeaders == null )? new string[]{}: stringHeaders) ?? new Dictionary<string,string[]>())),
                 new Response(
                     content ?? Response.Content,
-                    statusCode ?? Response.StatusCode));
+                    statusCode ?? Response.StatusCode,
+                    model ?? Response.Model));
         
         public static Context operator | (Context before, WebAction next)
         => next(before);

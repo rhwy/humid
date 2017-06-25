@@ -3,9 +3,12 @@ using System.Reflection;
 using System;
 using System.Linq;
 using NFluent;
+using System.Collections.Generic;
 
 using static Humid.Core;
-using System.Collections.Generic;
+using static Humid.WebActions;
+using static Humid.Helpers;
+
 
 namespace Humid.Tests
 {
@@ -51,5 +54,45 @@ namespace Humid.Tests
             Check.That(testContext.Request.Headers["accept-language"])
                 .ContainsExactly("en-EN");
         }
+
+        [Fact]
+        public void response_should_have_a_model_object_response_if_needed()
+        {
+            var testContext = Defaults.Context.With(model : new {name="rui"});
+
+            Check.That(testContext.Response.Model.name as string).IsEqualTo("rui");
+        }
+
+        [Fact]
+        public void ensure_do_helper_can_accept_any_return_value_as_model()
+        {
+            var testContext = Defaults.Context.With(
+                path:"/hello/world/42",
+                type:GET);
+            
+            Route route = Get("/hello/{name}/{id}") 
+                            | Do(ctx => {
+                                    var name = ctx.Params<string>("name","hell");
+                                    var id = ctx.Params<int>("id",0);
+                                    
+                                    return new {name,id};
+                                })
+                            | OK;
+
+            Context afterContext = Defaults.Context;
+
+            if(route.Matches(testContext))
+                afterContext = route.ApplyPipeline(testContext); 
+            
+            Assert.Equal("world",afterContext.Response.Model.name);
+            Assert.Equal(42,afterContext.Response.Model.id);
+            Assert.Equal(200,afterContext.Response.StatusCode);
+        }
+        // [Fact]
+        // public void if_json_helper_is_called_model_should_be_serialized_to_content()
+        // {
+        //     var testContext = Defaults.Context.With(model : new {name="rui"});
+
+        // }
     }
 }
