@@ -119,5 +119,43 @@ namespace Humid.Tests
             Assert.Equal(200,afterContext.Response.StatusCode);
 
         }
+
+        [Fact]
+        public void json_action_can_also_adapt_model_before_serialization()
+        {
+            var headers = new Dictionary<string,string[]>{
+                ["accept"]= new []{"application/json"}
+            };
+
+            var testContext = Defaults.Context.With(
+                headers: headers,
+                path:"/hello/world/42",
+                type:GET);
+            
+            Route route = Get("/hello/{name}/{id}") 
+                            | Do(ctx => {
+                                    var name = ctx.Params<string>("name","hell");
+                                    var id = ctx.Params<int>("id",0);
+                                    return new {name,id};
+                                })
+                            | Json(model=> new {
+                                    name=model.name.ToUpper(),
+                                    model.id,
+                                    foo="bar"})
+                            | OK;
+
+            Context afterContext = Defaults.Context;
+
+            if(route.Matches(testContext))
+                afterContext = route.ApplyPipeline(testContext); 
+            
+            Assert.Equal("{\"name\":\"WORLD\",\"id\":42,\"foo\":\"bar\"}",afterContext.Response.Content);
+            Assert.Equal(200,afterContext.Response.StatusCode);
+
+        }
+
+        //define JSON as default behavior when model is present and content is empty
+        //JSON behavior must also set Response headers to content-type:application/json
+        //this means also introduce headers into Response!
     }
 }

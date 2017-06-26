@@ -76,6 +76,20 @@
             }
             return c;
         });
+        public static WebAction Json(Func<dynamic,dynamic> updateModel)
+        => new WebAction(c => {
+            if(c.Response.Model != null && c.Request.Headers.ContainsKey("accept"))
+            {
+                var accept = c.Request.Headers["accept"];
+                if(accept.Any(x=>x.Contains("json")))
+                {
+                    var updatedModel = updateModel(c.Response.Model);
+                    var serialized = JsonConvert.SerializeObject(updatedModel);
+                    return c.With(content:serialized);
+                }
+            }
+            return c;
+        });
         public static WebAction OK
         => new WebAction(c =>c.With(statusCode:200));
             
