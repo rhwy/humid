@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text.RegularExpressions;
+    using Newtonsoft.Json;
 
     public static class Core
     {
@@ -62,6 +63,19 @@
             return new WebAction(c => c.With(model:action(c)));
         }
 
+        public static WebAction JSON
+        => new WebAction(c => {
+            if(c.Response.Model != null && c.Request.Headers.ContainsKey("accept"))
+            {
+                var accept = c.Request.Headers["accept"];
+                if(accept.Any(x=>x.Contains("json")))
+                {
+                    var serialized = JsonConvert.SerializeObject(c.Response.Model);
+                    return c.With(content:serialized);
+                }
+            }
+            return c;
+        });
         public static WebAction OK
         => new WebAction(c =>c.With(statusCode:200));
             
@@ -300,7 +314,7 @@
                     path ?? Request.Path,
                     routeParams ?? Request.RouteParams,
                     query ?? Request.QueryString,
-                    headers ?? (Helpers.ExtractHeadersToDictionary((stringHeaders == null )? new string[]{}: stringHeaders) ?? new Dictionary<string,string[]>())),
+                    setHeaders(headers,Request.Headers,stringHeaders)),
                 new Response(
                     content ?? Response.Content,
                     statusCode ?? Response.StatusCode,
@@ -309,7 +323,16 @@
         public static Context operator | (Context before, WebAction next)
         => next(before);
 
-        
+        private IDictionary<string,string[]> setHeaders(IDictionary<string,string[]> headers, IDictionary<string,string[]> actual, IEnumerable<string> stringHeaders)
+        {
+            if(headers != null) return headers;
+            if(stringHeaders != null)
+            {
+                if(actual != null && actual.Any()) return actual;
+                return Helpers.ExtractHeadersToDictionary(stringHeaders);
+            }
+            return actual;
+        }
         public void Deconstruct(out string content, out int statusCode)
         {
             content = Response.Content;
@@ -348,7 +371,9 @@
             var routeParams = Helpers.ExtractTokensFromPath(
                 Template,before.Request.Path);
             var contextWithParams = before.With(routeParams : routeParams);        
-            return (Pipeline == null)? contextWithParams : Pipeline.Invoke(contextWithParams);
+            var afterContext = (Pipeline == null)? contextWithParams : Pipeline.Invoke(contextWithParams);
+
+            return afterContext;
         }
 
         public bool Matches(string path)

@@ -88,11 +88,36 @@ namespace Humid.Tests
             Assert.Equal(42,afterContext.Response.Model.id);
             Assert.Equal(200,afterContext.Response.StatusCode);
         }
-        // [Fact]
-        // public void if_json_helper_is_called_model_should_be_serialized_to_content()
-        // {
-        //     var testContext = Defaults.Context.With(model : new {name="rui"});
+        [Fact]
+        //public void by_default_if_accept_is_json_and_model_exists_we_serialize_it_to_content()
+        public void json_action_with_no_param_serialize_model_to_content_if_json_headers()
+        {
+            var headers = new Dictionary<string,string[]>{
+                ["accept"]= new []{"application/json"}
+            };
 
-        // }
+            var testContext = Defaults.Context.With(
+                headers: headers,
+                path:"/hello/world/42",
+                type:GET);
+            
+            Route route = Get("/hello/{name}/{id}") 
+                            | Do(ctx => {
+                                    var name = ctx.Params<string>("name","hell");
+                                    var id = ctx.Params<int>("id",0);
+                                    return new {name,id};
+                                })
+                            | JSON
+                            | OK;
+
+            Context afterContext = Defaults.Context;
+
+            if(route.Matches(testContext))
+                afterContext = route.ApplyPipeline(testContext); 
+            
+            Assert.Equal("{\"name\":\"world\",\"id\":42}",afterContext.Response.Content);
+            Assert.Equal(200,afterContext.Response.StatusCode);
+
+        }
     }
 }
