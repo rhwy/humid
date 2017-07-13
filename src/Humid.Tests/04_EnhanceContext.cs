@@ -184,5 +184,38 @@ namespace Humid.Tests
             Assert.Equal("hello marvin, the answer is 42",content);
             Assert.Equal(200,status);
         }
+
+        //Dictionaries <string,string[]> are things commonly used for headers
+        //this can be tedious to manage, convert, etc...in order to simplify all
+        //these needs, we'll handle our special version of the dictionary
+        [Fact]
+        public void headers_dictionary_is_case_insensitive()
+        {
+            var dico = HeadersDictionary.Create(new Dictionary<string,string[]> {
+                ["accept"]=new[]{"application/json"}
+            });
+
+            Assert.True(dico.ContainsKey("AccePT"));
+        }
+
+        [Fact]
+        public void when_get_headers_item_as_string_first_is_taken()
+        {
+            var dico = HeadersDictionary.Create(new Dictionary<string,string[]> {
+                ["accept"]=new[]{"application/json","text/html"}
+            });
+            var accept = dico["accept",HeadersValueType.FirstOnly];
+            Assert.Equal("application/json",accept);
+        }
+
+        [Fact]
+        public void when_get_headers_item_as_string_concatenation_is_done()
+        {
+            var dico = HeadersDictionary.Create(new Dictionary<string,string[]> {
+                ["accept"]=new[]{"application/json","text/html"}
+            });
+            var accept = dico["accept",HeadersValueType.Concatened];
+            Assert.Equal("application/json;text/html",accept);
+        }
     }
 }

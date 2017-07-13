@@ -1,6 +1,7 @@
 ﻿namespace Humid
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text.RegularExpressions;
@@ -60,7 +61,11 @@
 
         public static WebAction Do(Func<Context,dynamic> action)
         {
-            return new WebAction(c => c.With(model:action(c)));
+            return new WebAction(c => {
+                dynamic result = action(c);
+                
+                return c.With(model:result,content:result.ToString());
+            });
         }
 
         public static WebAction JSON
@@ -71,7 +76,9 @@
                 if(accept.Any(x=>x.Contains("json")))
                 {
                     var serialized = JsonConvert.SerializeObject(c.Response.Model);
-                    return c.With(content:serialized);
+                    return c.With(
+                        content:serialized,
+                        responseHeaders:new Dictionary<string,string[]>(){["accept"]=new []{"application/json"}});
                 }
             }
             return c;
@@ -218,7 +225,32 @@
     {
         GET, POST, DELETE, HEAD, PUT, UNKNOWN
     }
+    public enum HeadersValueType{ FirstOnly, Concatened}
 
+    public class HeadersDictionary : Dictionary<string, string[]>
+    {
+        private HeadersDictionary():base(StringComparer.OrdinalIgnoreCase){}
+        public static HeadersDictionary Create(Dictionary<string,string[]> values)
+        {
+            var me = new HeadersDictionary();
+            foreach (var item in values)
+                me.Add(item.Key,item.Value);
+            return me;
+        }
+
+        public string this[string key, HeadersValueType type]
+        {
+            get{
+                switch(type)
+                {
+                    case HeadersValueType.FirstOnly:
+                        return this[key].FirstOrDefault();
+                    default:
+                        return string.Join(";",this[key]);
+                }
+            }
+        }
+    }
     public struct Request
     {
         public RequestType Type {get;}
@@ -254,10 +286,13 @@
         public int StatusCode {get;}
         public string Content {get;}
         public dynamic Model {get;}
-        public Response(string content, int statusCode, dynamic model = null)
+        public IDictionary<string,string[]> Headers {get;}
+        public Response(string content, int statusCode, dynamic model = null, 
+        IDictionary<string,string[]> headers = null)
         {
             Content = content; StatusCode = statusCode;
             Model = model;
+            Headers = headers;
         }
         public static Response Default => new Response(string.Empty, 0);
     }
@@ -320,7 +355,8 @@
                 Dictionary<string,string> routeParams = null,
                 string query = null,
                 IEnumerable<string> stringHeaders = null,
-                IDictionary<string,string[]> headers = null,
+                IDictionary<string,string[]> requestHeaders = null,
+                IDictionary<string,string[]> responseHeaders = null,
                 dynamic model = null)
         => new Context(
                 new Request(
@@ -328,11 +364,12 @@
                     path ?? Request.Path,
                     routeParams ?? Request.RouteParams,
                     query ?? Request.QueryString,
-                    setHeaders(headers,Request.Headers,stringHeaders)),
+                    setHeaders(requestHeaders,Request.Headers,stringHeaders)),
                 new Response(
                     content ?? Response.Content,
                     statusCode ?? Response.StatusCode,
-                    model ?? Response.Model));
+                    model ?? Response.Model,
+                    setHeaders(responseHeaders,Response.Headers,null)));
         
         public static Context operator | (Context before, WebAction next)
         => next(before);
@@ -480,6 +517,7 @@
     public delegate WebAction WebActionFeature<T>(T value);
 
     public delegate (Context context, bool isMatch) Filter((Context context, bool isMatch) previous);
+    
     #endregion
 
 

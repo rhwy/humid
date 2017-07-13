@@ -46,7 +46,7 @@ namespace Humid.Tests
                 ["accept-language"] = new []{"en-EN"}
             };
 
-            var testContext = Defaults.Context.With(headers : headers);
+            var testContext = Defaults.Context.With(requestHeaders: headers);
             Assert.Equal(2,testContext.Request.Headers.Count());
             Check.That(testContext.Request.Headers).HasSize(2);
             Check.That(testContext.Request.Headers["accept"])
@@ -97,7 +97,7 @@ namespace Humid.Tests
             };
 
             var testContext = Defaults.Context.With(
-                headers: headers,
+                requestHeaders: headers,
                 path:"/hello/world/42",
                 type:GET);
             
@@ -117,7 +117,7 @@ namespace Humid.Tests
             
             Assert.Equal("{\"name\":\"world\",\"id\":42}",afterContext.Response.Content);
             Assert.Equal(200,afterContext.Response.StatusCode);
-
+            Assert.Equal("application/json",afterContext.Response.Headers["accept"][0]);
         }
 
         [Fact]
@@ -128,7 +128,7 @@ namespace Humid.Tests
             };
 
             var testContext = Defaults.Context.With(
-                headers: headers,
+                requestHeaders: headers,
                 path:"/hello/world/42",
                 type:GET);
             
@@ -150,6 +150,40 @@ namespace Humid.Tests
                 afterContext = route.ApplyPipeline(testContext); 
             
             Assert.Equal("{\"name\":\"WORLD\",\"id\":42,\"foo\":\"bar\"}",afterContext.Response.Content);
+            Assert.Equal(200,afterContext.Response.StatusCode);
+            
+        }
+
+        [Fact]
+        public void json_action_has_no_effect_if_accept_not_right_type()
+        {
+            var headers = new Dictionary<string,string[]>{
+                ["accept"]= new []{"text/html"}
+            };
+
+            var testContext = Defaults.Context.With(
+                requestHeaders: headers,
+                path:"/hello/world/42",
+                type:GET);
+            
+            Route route = Get("/hello/{name}/{id}") 
+                            | Do(ctx => {
+                                    var name = ctx.Params<string>("name","hell");
+                                    var id = ctx.Params<int>("id",0);
+                                    return new {name,id};
+                                })
+                            | Json(model=> new {
+                                    name=model.name.ToUpper(),
+                                    model.id,
+                                    foo="bar"})
+                            | OK;
+
+            Context afterContext = Defaults.Context;
+
+            if(route.Matches(testContext))
+                afterContext = route.ApplyPipeline(testContext); 
+            
+            Assert.Equal("{ name = world, id = 42 }",afterContext.Response.Content);
             Assert.Equal(200,afterContext.Response.StatusCode);
 
         }
