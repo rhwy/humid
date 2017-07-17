@@ -188,8 +188,14 @@ namespace Humid.Tests
 
         }
 
-        //define JSON as default behavior when model is present and content is empty
-        //JSON behavior must also set Response headers to content-type:application/json
-        //this means also introduce headers into Response!
+        //use new HeadersDictionary instead of IDictionary<string,string> for headers
+        //in request and response
+
+        //introduce html view with 1/micro templating 2/addon with dotliquid (in ext proj)
+        //introduce async?
+        //introduce railway?
+        //remove aspnet dependencies in humid core, create a real humid.owin lib and real
+        //demo project.
+        
     }
 }

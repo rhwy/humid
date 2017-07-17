@@ -51,12 +51,20 @@ namespace Humid.Owin
                     Get("/hello/{name}")
                      | Do(ctx => ctx.With(content: $"Hello {ctx.Params<string>("name", "world").ToUpper()}"))
                      | OK;
+                
+                var get_hello_object = 
+                    Get("/hello/world")
+                     | Do(ctx => new{ message = "Hello world",value=42} )
+                     | OK;
+
 
                 return routes 
                 + get_hello_A
                 + any_hello_B
                 + get_del_hello_C
-                + get_hello_name;
+                + get_hello_object
+                + get_hello_name
+                ;
                      
            
             });

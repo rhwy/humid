@@ -250,6 +250,8 @@
                 }
             }
         }
+        //public static implicit operator string (string[] other)
+       
     }
     public struct Request
     {
