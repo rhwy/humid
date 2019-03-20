@@ -9,4 +9,9 @@
     <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Humid\Humid.csproj" />
+    <ProjectReference Include="..\Humid.Middleware\Humid.Middleware.csproj" />
+  </ItemGroup>
+
 </Project>
