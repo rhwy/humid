@@ -43,8 +43,8 @@ namespace Humid.Tests
         public void extract_values_from_rex_to_dict(string rex, string path, string key, string value)
         {
             var kv = ExtractTokensValuesFromExpression(rex,path);
-            Assert.Equal(key,kv.Keys.FirstOrDefault());
-            Assert.Equal(value,kv.Values.FirstOrDefault());
+            Assert.Equal(kv.Keys.FirstOrDefault(), "name");
+            Assert.Equal(kv.Values.FirstOrDefault(), "world");
         }
 
         //we want to have more that just a string path to define routes,
@@ -84,7 +84,7 @@ namespace Humid.Tests
 
             Assert.Equal("paul",name);
             Assert.Equal(42,id);
-            Assert.Null(missingValue);
+            Assert.Equal(null,missingValue);
             Assert.Equal(123,missingValueWithFallback);
         }
 

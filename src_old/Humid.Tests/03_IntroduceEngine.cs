@@ -6,7 +6,6 @@ namespace Humid.Tests
     using static Humid.WebActions;
 
     using System.Linq;
-    using NFluent;
 
     ///<summary>
     ///Now we have all the parts to start builder the Humid web engine!
@@ -51,7 +50,7 @@ namespace Humid.Tests
 
             
             var route = new Route("/a", ok);
-            Check.That(route.Filters).HasSize(1);
+            Assert.Equal(1,route.Filters.Count());
             Filter routeFilter = route.Filters.FirstOrDefault();
             Assert.Equal(isMatchExpected,routeFilter((newContext, true)).isMatch);
         }
@@ -103,7 +102,7 @@ namespace Humid.Tests
 
             var isRouteMatchingForContext = route.Matches(testContext);
             
-            Assert.True(isRouteMatchingForContext);
+            Assert.Equal(true,isRouteMatchingForContext);
         }
         ///use Path helper to create a new route from path and pipe it 
         ///with another filter
