@@ -3,9 +3,11 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Text.RegularExpressions;
     using Newtonsoft.Json;
+    using System.Reflection;
 
     public static class Core
     {
@@ -29,10 +31,32 @@
         public static Response Response(string content, int statusCode)
         => new Response(content,statusCode);
 
-        public static Context Context(Request request, Response response)
-        => new Context(request,response);
+        public static Context Context(
+            Request request, Response response, Dictionary<string,string> server = null)
+        => new Context(request,response,server ?? new Dictionary<string,string>());
     }
 
+    public delegate string RenderTemplate(string template, dynamic model, dynamic options);
+
+    public static class WebTemplateEngine
+    {
+        private static Dictionary<string,ITemplateEngine> store = new Dictionary<string, ITemplateEngine>();
+
+        public static void Register(string mediaType, ITemplateEngine renderer)
+        {
+            if(store.ContainsKey(mediaType))
+            {
+                throw new ArgumentException($"you're trying to to change template rendering engine for type {mediaType}");
+            }
+            store.Add(mediaType,renderer);
+        }
+        private static ITemplateEngine defaultTemplateEngine = new SimpleTemplateEngine();
+        public static ITemplateEngine Get(string mediaType)
+        {
+            if(store.ContainsKey(mediaType)) return store[mediaType];
+            return defaultTemplateEngine;
+        }
+    }
     public static class WebActions
     {
         public static Route Path(string path) 
@@ -78,7 +102,7 @@
                     var serialized = JsonConvert.SerializeObject(c.Response.Model);
                     return c.With(
                         content:serialized,
-                        responseHeaders:new Dictionary<string,string[]>(){["accept"]=new []{"application/json"}});
+                        responseHeaders:new Dictionary<string,string[]>(){["content-type"]=new []{"application/json"}});
                 }
             }
             return c;
@@ -92,11 +116,33 @@
                 {
                     var updatedModel = updateModel(c.Response.Model);
                     var serialized = JsonConvert.SerializeObject(updatedModel);
-                    return c.With(content:serialized);
+                    return c.With(
+                        content:serialized,
+                        responseHeaders:new Dictionary<string,string[]>(){["content-type"]=new []{"application/json"}});
                 }
             }
             return c;
         });
+
+        public static WebAction Html(string templateName)
+        => new WebAction(c => {
+            if(c.Response.Model != null && c.Request.Headers.ContainsKey("accept"))
+            {
+                var accept = c.Request.Headers["accept"];
+                if(accept.Any(x=>x.Contains("html")))
+                {
+                    //var folder = new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName;
+                    //var template = File.ReadAllText(System.IO.Path.Combine(folder+"/templates",templateName));
+                    var renderer = WebTemplateEngine.Get("html");
+                    var serialized = renderer.RenderTemplate(c,templateName,c.Response.Model);
+                    return c.With(
+                        content:serialized,
+                        responseHeaders:new Dictionary<string,string[]>(){["content-type"]=new []{"application/json"}});
+                }
+            }
+            return c;
+        });
+
         public static WebAction OK
         => new WebAction(c =>c.With(statusCode:200));
             
@@ -126,7 +172,7 @@
                 if(a == '{') take = true;
                 if(a == '}') {
                     take = false; 
-                    result += $"(?<{current}>[a-zA-Z0-9-_]*)";
+                    result += $"(?<{current}>[a-zA-Z0-9-_ ]*)";
                     current = ""; 
                 }
                 if(!take &&  a!='}') { result += a;}
@@ -303,9 +349,11 @@
     {
         public Request Request {get;}
         public Response Response {get;}
-        public Context(Request request, Response response)
+
+        public Dictionary<string, string> Server {get;}
+        public Context(Request request, Response response, Dictionary<string,string> server)
         {
-            Request = request; Response = response;
+            Request = request; Response = response;Server = server;
         }
         public T Params<T>(string key, T defaultValue = default(T))
         {
@@ -347,7 +395,7 @@
 
 
         public static Context Default 
-        => new Context(Request.Default, Response.Default);
+        => new Context(Request.Default, Response.Default,new Dictionary<string,string>());
 
         public Context With(
                 RequestType? type = null, 
@@ -359,7 +407,8 @@
                 IEnumerable<string> stringHeaders = null,
                 IDictionary<string,string[]> requestHeaders = null,
                 IDictionary<string,string[]> responseHeaders = null,
-                dynamic model = null)
+                dynamic model = null,
+                Dictionary<string,string> server = null)
         => new Context(
                 new Request(
                     type ?? Request.Type,
@@ -371,7 +420,8 @@
                     content ?? Response.Content,
                     statusCode ?? Response.StatusCode,
                     model ?? Response.Model,
-                    setHeaders(responseHeaders,Response.Headers,null)));
+                    setHeaders(responseHeaders,Response.Headers,null)),
+                server ?? Server);
         
         public static Context operator | (Context before, WebAction next)
         => next(before);
@@ -512,6 +562,11 @@
             current.AddRoute(newRoute);
             return current;
         }
+        public static Router operator - (Router current, Route newRoute)
+        {
+            current.AddRoute(newRoute);
+            return current;
+        }
     }
 
     public delegate Context WebAction(Context before);
@@ -523,5 +578,38 @@
     #endregion
 
 
+    public interface ITemplateEngine
+    {
+        string RenderTemplate(Context context,string name, object model);
+        string RenderTemplate(Context context,string name);
+    }
 
+    public class SimpleTemplateEngine : ITemplateEngine
+    {
+        public string RenderTemplate(Context context,string name, object model)
+        {
+            var template = RenderTemplate(context, name);
+            if(model.Equals(null) || template == null) return template;
+            var type = model.GetType();
+            foreach(var prop in type.GetProperties())
+            {
+                if(template.Contains(prop.Name))
+                {   
+                    var value = prop.GetValue(model);
+                    template = template.Replace("{"+prop.Name+"}",$"{value}");
+                }
+                    
+            }
+            return template;
+        }
+        public string RenderTemplate(Context context, string name)
+        {
+            var rootPath = context.Server["Site:PhysicalFullPath"];
+            var templateRelativePath = Path.Combine("templates",name + ".html");
+            var templatePath = Path.Combine(rootPath,templateRelativePath);
+            if(File.Exists(templatePath))
+                return File.ReadAllText(templatePath);
+            return null;
+        }
+    }
 } 

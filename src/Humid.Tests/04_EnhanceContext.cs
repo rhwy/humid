@@ -9,6 +9,7 @@ namespace Humid.Tests
 
     using System.Linq;
     using System.Collections.Generic;
+    using NFluent;
 
     ///<summary>
     ///Now we have the basics parts of our web lib but to make it really usable, we need:
@@ -26,10 +27,10 @@ namespace Humid.Tests
         //"/hello/{name}" -> "/hello/(?<name>[a-zA-Z0-9-_]*)"
         [Theory]
         [InlineData("/simple/path","/simple/path")]
-        [InlineData("/hello/{name}","/hello/(?<name>[a-zA-Z0-9-_]*)")]
-        [InlineData("/hello/{id}","/hello/(?<id>[a-zA-Z0-9-_]*)")]
+        [InlineData("/hello/{name}","/hello/(?<name>[a-zA-Z0-9-_ ]*)")]
+        [InlineData("/hello/{id}","/hello/(?<id>[a-zA-Z0-9-_ ]*)")]
         [InlineData("/","/")]
-        [InlineData("/hello/{id}/bla","/hello/(?<id>[a-zA-Z0-9-_]*)/bla")]
+        [InlineData("/hello/{id}/bla","/hello/(?<id>[a-zA-Z0-9-_ ]*)/bla")]
         public void tokenizer_helper_can_transform_stringWithTokens_in_regex_string(string inputPath, string expectedRegex)
         {
             string actual = TransformRouteExpression(inputPath);
@@ -84,7 +85,7 @@ namespace Humid.Tests
 
             Assert.Equal("paul",name);
             Assert.Equal(42,id);
-            Assert.Null(missingValue);
+            Check.That(missingValue).IsNull();
             Assert.Equal(123,missingValueWithFallback);
         }
 

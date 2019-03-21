@@ -102,8 +102,7 @@ namespace Humid.Tests
             var testContext = Defaults.Context.With(path:"/a",type:GET);
 
             var isRouteMatchingForContext = route.Matches(testContext);
-            
-            Assert.True(isRouteMatchingForContext);
+            Check.That(isRouteMatchingForContext).IsTrue();
         }
         ///use Path helper to create a new route from path and pipe it 
         ///with another filter

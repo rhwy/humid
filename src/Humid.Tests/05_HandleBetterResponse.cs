@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using static Humid.Core;
 using static Humid.WebActions;
 using static Humid.Helpers;
-
+using System.IO;
 
 namespace Humid.Tests
 {
@@ -117,7 +117,7 @@ namespace Humid.Tests
             
             Assert.Equal("{\"name\":\"world\",\"id\":42}",afterContext.Response.Content);
             Assert.Equal(200,afterContext.Response.StatusCode);
-            Assert.Equal("application/json",afterContext.Response.Headers["accept"][0]);
+            Assert.Equal("application/json",afterContext.Response.Headers["content-type"][0]);
         }
 
         [Fact]
@@ -161,6 +161,7 @@ namespace Humid.Tests
                 ["accept"]= new []{"text/html"}
             };
 
+            
             var testContext = Defaults.Context.With(
                 requestHeaders: headers,
                 path:"/hello/world/42",
@@ -197,5 +198,81 @@ namespace Humid.Tests
         //remove aspnet dependencies in humid core, create a real humid.owin lib and real
         //demo project.
         
+        [Fact]
+        public void context_should_be_filled_with_host_information()
+        {
+            var currentAppPath = new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName;
+            var server = new Dictionary<string,string>{
+                ["Site:PhysicalFullPath"]=currentAppPath
+            };  
+            var headers = new Dictionary<string,string[]>{
+                ["accept"]= new []{"text/html"}
+            };
+            var testContext = Defaults.Context.With(
+                requestHeaders: headers,
+                path:"/hello/world/42",
+                type:GET,
+                server:server);
+
+            Assert.Equal(currentAppPath,testContext.Server["Site:PhysicalFullPath"]);
+        }
+
+        [Fact]
+        public void templates_use_an_abstraction()
+        {
+            var server = new Dictionary<string,string>{
+                ["Site:PhysicalFullPath"]=new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName
+            };            
+
+            var headers = new Dictionary<string,string[]>{
+                ["accept"]= new []{"text/html"}
+            };
+            var testContext = Defaults.Context.With(
+                requestHeaders: headers,
+                path:"/hello/world/42",
+                type:GET,
+                server:server);
+            var sampleObject = new {id=42};
+            ITemplateEngine engine = new SimpleTemplateEngine();
+            string renderTemplate = engine.RenderTemplate(testContext,"templateName");
+            string renderTemplateWithModel = engine.RenderTemplate(testContext,"templateName",sampleObject);
+        }
+
+        [Fact]
+        public void html_action_can_return_html_with_a_template_name()
+        {
+            var headers = new Dictionary<string,string[]>{
+                ["accept"]= new []{"text/html"}
+            };
+
+            var server = new Dictionary<string,string>{
+                ["Site:PhysicalFullPath"]=new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName
+            };            
+
+            var testContext = Defaults.Context.With(
+                requestHeaders: headers,
+                path:"/hello/World/42",
+                type:GET,
+                server:server);
+            
+            Route route = Get("/hello/{name}/{id}") 
+                            | Do(ctx => {
+                                    var name = ctx.Params<string>("name","hell");
+                                    var id = ctx.Params<int>("id",0);
+                                    return new {name,id};
+                                })
+                            | Html("simpleH1")
+                            | OK;
+
+            Context afterContext = Defaults.Context;
+
+            if(route.Matches(testContext))
+                afterContext = route.ApplyPipeline(testContext); 
+            
+            Assert.Equal(@"<h1 id=""42"">Hello <b>World</b></h1>",afterContext.Response.Content);
+            Assert.Equal(200,afterContext.Response.StatusCode);
+            
+        }
+
     }
 }
