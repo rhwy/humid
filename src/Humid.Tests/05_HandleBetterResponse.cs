@@ -10,37 +10,25 @@ using static Humid.WebActions;
 using static Humid.Helpers;
 using System.IO;
 using NFluent.Mocks;
+using Newtonsoft.Json;
 
 namespace Humid.Tests
 {
     public class HandleBetterResponse
     {
-        //actually we have a body response that is directly a string.
-        //what we want is to handle an object response and then serialize
-        //it as a string in the correct format depending on the accept type
-        //provided by the client.
-        //that means that we have to change:
-        //- add Headers in request
-        //- add headers in response
-        //- add an object response
-        //- change signature of Do webaction to Func<Context,object> and do the 
-        //   transformation to string while applying action
-
-
-        [Fact]
-        public void context_should_carry_very_simple_stringheaders_with_comma_separated_values()
+        [Fact] public void 
+        context_should_carry_very_simple_stringheaders_with_comma_separated_values()
         {
             var headers = new[]{ "accept:application/json","accept-language:en-EN, fr"};
             var testContext = Defaults.Context.With(stringHeaders : headers);
 
-            Assert.Equal(2,testContext.Request.Headers.Count());
             Check.That(testContext.Request.Headers).HasSize(2);
             Check.That(testContext.Request.Headers["accept"]).ContainsExactly("application/json");
             Check.That(testContext.Request.Headers["accept-language"]).ContainsExactly("en-EN","fr");
         }
 
-        [Fact]
-        public void context_should_carry_regular_owin_headers()
+        [Fact] public void 
+        context_should_carry_regular_owin_headers()
         {
             var headers = new Dictionary<string,string[]>{
                 ["accept"]= new []{"application/json","text/html"},
@@ -48,7 +36,6 @@ namespace Humid.Tests
             };
 
             var testContext = Defaults.Context.With(requestHeaders: headers);
-            Assert.Equal(2,testContext.Request.Headers.Count());
             Check.That(testContext.Request.Headers).HasSize(2);
             Check.That(testContext.Request.Headers["accept"])
                 .ContainsExactly("application/json","text/html");
@@ -56,16 +43,15 @@ namespace Humid.Tests
                 .ContainsExactly("en-EN");
         }
 
-        [Fact]
-        public void response_should_have_a_model_object_response_if_needed()
+        [Fact] public void 
+        response_should_have_a_model_object_response_if_needed()
         {
             var testContext = Defaults.Context.With(model : new {name="rui"});
-
             Check.That(testContext.Response.Model.name as string).IsEqualTo("rui");
         }
 
-        [Fact]
-        public void ensure_do_helper_can_accept_any_return_value_as_model()
+        [Fact] public void 
+        ensure_do_helper_can_accept_any_return_value_as_model()
         {
             var testContext = Defaults.Context.With(
                 path:"/hello/world/42",
@@ -84,14 +70,14 @@ namespace Humid.Tests
 
             if(route.Matches(testContext))
                 afterContext = route.ApplyPipeline(testContext); 
-            
-            Assert.Equal("world",afterContext.Response.Model.name);
-            Assert.Equal(42,afterContext.Response.Model.id);
-            Assert.Equal(200,afterContext.Response.StatusCode);
+
+            Check.That((string)afterContext.Response.Model.name).IsEqualTo("world");
+            Check.That((int)afterContext.Response.Model.id).IsEqualTo(42);
+            Check.That((int)afterContext.Response.StatusCode).IsEqualTo(200);
         }
-        [Fact]
-        //public void by_default_if_accept_is_json_and_model_exists_we_serialize_it_to_content()
-        public void json_action_with_no_param_serialize_model_to_content_if_json_headers()
+
+        [Fact] public void 
+        json_action_with_no_param_serialize_model_to_content_if_json_headers()
         {
             var headers = new Dictionary<string,string[]>{
                 ["accept"]= new []{"application/json"}
@@ -116,13 +102,13 @@ namespace Humid.Tests
             if(route.Matches(testContext))
                 afterContext = route.ApplyPipeline(testContext); 
             
-            Assert.Equal("{\"name\":\"world\",\"id\":42}",afterContext.Response.Content);
-            Assert.Equal(200,afterContext.Response.StatusCode);
-            Assert.Equal("application/json",afterContext.Response.Headers["content-type"][0]);
+            Check.That(afterContext.Response.Content).IsEqualTo("{\"name\":\"world\",\"id\":42}");
+            Check.That(afterContext.Response.StatusCode).IsEqualTo(200);
+            Check.That(afterContext.Response.Headers["content-type"][0]).IsEqualTo("application/json");
         }
 
-        [Fact]
-        public void json_action_can_also_adapt_model_before_serialization()
+        [Fact] public void 
+        json_action_can_also_adapt_model_before_serialization()
         {
             var headers = new Dictionary<string,string[]>{
                 ["accept"]= new []{"application/json"}
@@ -150,13 +136,12 @@ namespace Humid.Tests
             if(route.Matches(testContext))
                 afterContext = route.ApplyPipeline(testContext); 
             
-            Assert.Equal("{\"name\":\"WORLD\",\"id\":42,\"foo\":\"bar\"}",afterContext.Response.Content);
-            Assert.Equal(200,afterContext.Response.StatusCode);
-            
+            Check.That(afterContext.Response.Content).IsEqualTo("{\"name\":\"WORLD\",\"id\":42,\"foo\":\"bar\"}");
+            Check.That(afterContext.Response.StatusCode).IsEqualTo(200);
         }
 
-        [Fact]
-        public void json_action_has_no_effect_if_accept_not_right_type()
+        [Fact] public void 
+        json_action_has_no_effect_if_accept_not_right_type()
         {
             var headers = new Dictionary<string,string[]>{
                 ["accept"]= new []{"text/html"}
@@ -185,22 +170,13 @@ namespace Humid.Tests
             if(route.Matches(testContext))
                 afterContext = route.ApplyPipeline(testContext); 
             
-            Assert.Equal("{ name = world, id = 42 }",afterContext.Response.Content);
-            Assert.Equal(200,afterContext.Response.StatusCode);
-
+            Check.That(afterContext.Response.Content).IsEqualTo("{ name = world, id = 42 }");
+            Check.That(afterContext.Response.StatusCode).IsEqualTo(200);
         }
 
-        //use new HeadersDictionary instead of IDictionary<string,string> for headers
-        //in request and response
-
-        //introduce html view with 1/micro templating 2/addon with dotliquid (in ext proj)
-        //introduce async?
-        //introduce railway?
-        //remove aspnet dependencies in humid core, create a real humid.owin lib and real
-        //demo project.
         
-        [Fact]
-        public void context_should_be_filled_with_host_information()
+        [Fact] public void 
+        context_should_be_filled_with_host_information()
         {
             var currentAppPath = new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName;
             var server = new Dictionary<string,string>{
@@ -215,11 +191,11 @@ namespace Humid.Tests
                 type:GET,
                 server:server);
 
-            Assert.Equal(currentAppPath,testContext.Server["Site:PhysicalFullPath"]);
+            Check.That(testContext.Server["Site:PhysicalFullPath"]).IsEqualTo(currentAppPath);
         }
 
-        [Fact]
-        public void templates_use_an_abstraction()
+        [Fact] public void 
+        templates_use_an_abstraction()
         {
             var server = new Dictionary<string,string>{
                 ["Site:PhysicalFullPath"]=new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName
@@ -235,12 +211,14 @@ namespace Humid.Tests
                 server:server);
             var sampleObject = new {id=42};
             ITemplateEngine engine = new SimpleTemplateEngine();
-            string renderTemplate = engine.RenderTemplate(testContext,"templateName");
-            string renderTemplateWithModel = engine.RenderTemplate(testContext,"templateName",sampleObject);
+            Check.ThatCode(() => {
+                string renderTemplate = engine.RenderTemplate(testContext,"templateName");
+                string renderTemplateWithModel = engine.RenderTemplate(testContext,"templateName",sampleObject);
+            }).DoesNotThrow();
         }
 
-        [Fact]
-        public void html_action_can_return_html_with_a_template_name()
+        [Fact] public void 
+        html_action_can_return_html_with_a_template_name()
         {
             var headers = new Dictionary<string,string[]>{
                 ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
@@ -272,6 +250,7 @@ namespace Humid.Tests
             
             Check.That(afterContext.Response.Content).IsEqualTo(@"<h1 id=""42"">Hello <b>World</b></h1>");
             Check.That(afterContext.Response.StatusCode).IsEqualTo(200);
+
             var contentType = afterContext.Response.Headers.FirstOrDefault(x => x.Key == "Content-Type");
             Check.That(contentType).IsNotEqualTo(default(KeyValuePair<string,string[]>));
             Check.That(contentType.Value).Contains("text/html;charset=utf-8");
@@ -311,46 +290,9 @@ namespace Humid.Tests
                 if(route.Matches(testContext))
                     afterContext = route.ApplyPipeline(testContext); 
                 
-                var expected = @"{
-  ""Request"": {
-    ""Type"": 0,
-    ""TypeName"": ""GET"",
-    ""Path"": ""/hello/World/42"",
-    ""QueryString"": """",
-    ""Query"": {},
-    ""RouteParams"": {
-      ""name"": ""World"",
-      ""id"": ""42""
-    },
-    ""Headers"": {
-      ""Accept"": [
-        ""text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8""
-      ]
-    }
-  },
-  ""Response"": {
-    ""StatusCode"": 200,
-    ""Content"": ""<h1 id=\""42\"">Hello <b>World</b></h1>"",
-    ""Model"": {
-      ""name"": ""World"",
-      ""id"": 42
-    },
-    ""Headers"": {
-      ""Content-Type"": [
-        ""text/html;charset=utf-8""
-      ]
-    }
-  },
-  ""Server"": {
-    ""Site:PhysicalFullPath"": """ + homeDir + @"""
-  }
-}
-";
+            var expected = JsonConvert.SerializeObject(afterContext,Formatting.Indented) + Environment.NewLine;
             Check.That(console.Output).IsEqualTo(expected);
             }
-            
-            
-
         }
     }
 }
