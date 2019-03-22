@@ -141,7 +141,7 @@
 
                     return c.With(
                         content:serialized,
-                        responseHeaders:new Dictionary<string,string[]>(){["content-type"]=new []{"text/html"}});
+                        responseHeaders:new Dictionary<string,string[]>(){["Content-Type"]=new []{"text/html;charset=utf-8"}});
                 } else { Console.WriteLine(isHtml);}
             }
             return c;
