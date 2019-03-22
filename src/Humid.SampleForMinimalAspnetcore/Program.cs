@@ -65,8 +65,9 @@ namespace Humid.SampleForMinimalAspnetcore
                 var get_hello_view = 
                     Get("/niceHello/{name}") 
                             | Do(ctx => {
+                                    int id = ctx.Query<int>("id",-1);
                                     var name = ctx.Params<string>("name","world");
-                                    return new {name};
+                                    return new {name,id};
                                 })
                             | Html("simpleHello")
                             | OK
@@ -74,12 +75,12 @@ namespace Humid.SampleForMinimalAspnetcore
 
 
                 return routes 
-                        + get_hello_A
-                        + any_hello_B
-                        + get_del_hello_C
-                        + get_hello_object
-                        + get_hello_name
-                        + get_hello_view
+                       - get_hello_A
+                       - any_hello_B
+                       - get_del_hello_C
+                       - get_hello_object
+                       - get_hello_name
+                       - get_hello_view
                 ;
                      
            

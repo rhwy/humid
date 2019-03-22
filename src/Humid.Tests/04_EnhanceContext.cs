@@ -3,7 +3,6 @@ namespace Humid.Tests
     using Xunit;
     using Xunit.Sdk;
     using static Humid.Core;
-    //using static FunctionalHelpers.Core;
     using static Humid.WebActions;
     using static Humid.Helpers;
 
@@ -53,8 +52,7 @@ namespace Humid.Tests
         [Theory]
         [InlineData("/t/{name}","/t/rui",true)]
         [InlineData("/t/{name}","/t/Jimmy",true)]
-        [InlineData("/t/{id}","/t/xx/toto",false)]
-        public void
+        [InlineData("/t/{id}","/t/xx/toto",false)] public void
         path_can_have_tokens(string template, string path,bool expectedMatch)
         {
             var route = Path(template) ;
@@ -70,8 +68,8 @@ namespace Humid.Tests
         //internally store that data as a Dictionary<string,string> but as users, 
         //we'll prefer to have an helper method on context to extract values safely
         //and possibelly with a cast:
-        [Fact]
-        public void can_extract_route_params_values_safely_with_cast()
+        [Fact] public void 
+        can_extract_route_params_values_safely_with_cast()
         {
             var routeParams = new Dictionary<string,string>{
                 ["name"] = "paul",
@@ -209,8 +207,8 @@ namespace Humid.Tests
             Assert.Equal("application/json",accept);
         }
 
-        [Fact]
-        public void when_get_headers_item_as_string_concatenation_is_done()
+        [Fact] public void 
+        when_get_headers_item_as_string_concatenation_is_done()
         {
             var dico = HeadersDictionary.Create(new Dictionary<string,string[]> {
                 ["accept"]=new[]{"application/json","text/html"}
@@ -219,6 +217,12 @@ namespace Humid.Tests
             Assert.Equal("application/json;text/html",accept);
         }
 
-        
+        [Fact] public void 
+        get_string_representation_of_request_type()
+        {
+            var context = Defaults.Context.With(type:RequestType.HEAD);
+            var name = context.Request.TypeName;
+            Check.That(name).IsEqualTo("HEAD");
+        }
     }
 }

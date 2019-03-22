@@ -272,9 +272,9 @@ namespace Humid.Tests
             
             Check.That(afterContext.Response.Content).IsEqualTo(@"<h1 id=""42"">Hello <b>World</b></h1>");
             Check.That(afterContext.Response.StatusCode).IsEqualTo(200);
-            var contentType = afterContext.Response.Headers.FirstOrDefault(x => x.Key == "content-type");
+            var contentType = afterContext.Response.Headers.FirstOrDefault(x => x.Key == "Content-Type");
             Check.That(contentType).IsNotEqualTo(default(KeyValuePair<string,string[]>));
-            Check.That(contentType.Value).Contains("text/html");
+            Check.That(contentType.Value).Contains("text/html;charset=utf-8");
         }
 
         [Fact] public void
@@ -283,9 +283,9 @@ namespace Humid.Tests
             var headers = new Dictionary<string,string[]>{
                 ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
             };
-
+            var homeDir = new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName;
             var server = new Dictionary<string,string>{
-                ["Site:PhysicalFullPath"]=new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName
+                ["Site:PhysicalFullPath"]=homeDir
             };            
 
             var testContext = Defaults.Context.With(
@@ -311,9 +311,10 @@ namespace Humid.Tests
                 if(route.Matches(testContext))
                     afterContext = route.ApplyPipeline(testContext); 
                 
-                Check.That(console.Output).IsEqualTo(@"{
+                var expected = @"{
   ""Request"": {
     ""Type"": 0,
+    ""TypeName"": ""GET"",
     ""Path"": ""/hello/World/42"",
     ""QueryString"": """",
     ""Query"": {},
@@ -335,17 +336,17 @@ namespace Humid.Tests
       ""id"": 42
     },
     ""Headers"": {
-      ""content-type"": [
-        ""text/html""
+      ""Content-Type"": [
+        ""text/html;charset=utf-8""
       ]
     }
   },
   ""Server"": {
-    ""Site:PhysicalFullPath"": ""/Volumes/Work/code/Rui/humid/src/Humid.Tests""
+    ""Site:PhysicalFullPath"": """ + homeDir + @"""
   }
 }
-");
-
+";
+            Check.That(console.Output).IsEqualTo(expected);
             }
             
             

@@ -1,6 +1,8 @@
 namespace Humid.Tests
 {
     using System;
+    using Newtonsoft.Json;
+    using NFluent;
     using Xunit;
     //using FunctionalHelpers;
    // using static FunctionalHelpers.Core;
@@ -20,7 +22,6 @@ namespace Humid.Tests
             Assert.Equal(RequestType.DELETE, DELETE);
             Assert.Equal(RequestType.HEAD, HEAD);
             Assert.Equal(RequestType.UNKNOWN, DEFAULT_REQUEST_TYPE);
-            
         }
 
         //A request is composed of a route and a type:

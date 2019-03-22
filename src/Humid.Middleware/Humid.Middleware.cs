@@ -30,14 +30,15 @@ namespace Humid.Middleware
             var content = string.Empty;
             var requestHeaders = context.Request.Headers.ToDictionary(k => k.Key, v => v.Value.ToArray());
             var physicalFullPath = Environment.CurrentDirectory;
-
+            var queryString = context.Request.QueryString.HasValue?context.Request.QueryString.Value:"";
             var beforeContext = Defaults.Context.With(
                 path:requestPath, 
                 type:(RequestType)Enum.Parse(typeof(RequestType),method),
                 requestHeaders:requestHeaders,
                 server: new Dictionary<string, string>{
                     {"Site:PhysicalFullPath",physicalFullPath}
-                });
+                },
+                query:queryString);
             var route = router.FindRoute(beforeContext);
             if( !(Route.Empty.Equals(route) || WebActions.NOT_FOUND.Equals(route)))
             {

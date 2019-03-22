@@ -282,6 +282,7 @@
     {
         GET, POST, DELETE, HEAD, PUT, UNKNOWN
     }
+
     public enum HeadersValueType{ FirstOnly, Concatened}
 
     public class HeadersDictionary : Dictionary<string, string[]>
@@ -313,6 +314,7 @@
     public struct Request
     {
         public RequestType Type {get;}
+        public string TypeName => Type.ToString();
         public string Path {get;}
         public string QueryString {get;}
         public Dictionary<string,string> Query {get;}
