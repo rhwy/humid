@@ -15,7 +15,7 @@
     <Authors>Rui Carvalho</Authors>
     <Title>Humid Middleware</Title>
     <Description>
-      Humid stands for `HUmble MIDdleware`. It's a very thin & light web library, written in a functional style and that allows you to write functional style 
+      Humid stands for HUmble MIDdleware. It's a very thin and light web library, written in a functional style and that allows you to write functional style 
       web applications or services. it comes completely without any dependency and fully tested. it can also be integrated as one file source code ;)
     </Description>
     <RepositoryUrl>https://github.com/rhwy/Humid</RepositoryUrl>
