@@ -28,7 +28,10 @@ namespace Humid.Middleware
             var method = context.Request.Method;
             var content = string.Empty;
 
-            var beforeContext = Defaults.Context.With(path:requestPath, type:(RequestType)Enum.Parse(typeof(RequestType),method));
+            var beforeContext = Defaults.Context.With(
+                path:requestPath, 
+                type:(RequestType)Enum.Parse(typeof(RequestType),
+                method));
             var route = router.FindRoute(beforeContext);
             if( !(Route.Empty.Equals(route) || WebActions.NOT_FOUND.Equals(route)))
             {

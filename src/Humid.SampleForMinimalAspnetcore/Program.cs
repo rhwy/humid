@@ -62,6 +62,14 @@ namespace Humid.SampleForMinimalAspnetcore
                     Get("/hello/world")
                      | Do(ctx => new{ message = "Hello world",value=42} )
                      | OK;
+                var get_hello_view = 
+                    Get("/niceHello/{name}") 
+                            | Do(ctx => {
+                                    var name = ctx.Params<string>("name","world");
+                                    return new {name};
+                                })
+                            | Html("simpleHello")
+                            | OK;
 
 
                 return routes 
@@ -70,6 +78,7 @@ namespace Humid.SampleForMinimalAspnetcore
                         + get_del_hello_C
                         + get_hello_object
                         + get_hello_name
+                        + get_hello_view
                 ;
                      
            

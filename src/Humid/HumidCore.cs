@@ -135,9 +135,10 @@
                     //var template = File.ReadAllText(System.IO.Path.Combine(folder+"/templates",templateName));
                     var renderer = WebTemplateEngine.Get("html");
                     var serialized = renderer.RenderTemplate(c,templateName,c.Response.Model);
+
                     return c.With(
                         content:serialized,
-                        responseHeaders:new Dictionary<string,string[]>(){["content-type"]=new []{"application/json"}});
+                        responseHeaders:new Dictionary<string,string[]>(){["content-type"]=new []{"text/html"}});
                 }
             }
             return c;
@@ -148,6 +149,13 @@
             
         public static WebAction NOT_FOUND
         => new WebAction(c => c.With(statusCode:404,content:"Page Not Found"));
+
+        public static WebAction Log(bool production = false)
+        => new WebAction(c => {
+            var jsonContext = JsonConvert.SerializeObject(c,Formatting.Indented);
+            Console.WriteLine(jsonContext);
+            return c;
+        });
 
         public static WebAction Content(string content)
         => new WebAction(c => c.With(content : content));

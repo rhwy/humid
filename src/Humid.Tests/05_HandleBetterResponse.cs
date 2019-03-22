@@ -9,6 +9,7 @@ using static Humid.Core;
 using static Humid.WebActions;
 using static Humid.Helpers;
 using System.IO;
+using NFluent.Mocks;
 
 namespace Humid.Tests
 {
@@ -269,10 +270,52 @@ namespace Humid.Tests
             if(route.Matches(testContext))
                 afterContext = route.ApplyPipeline(testContext); 
             
-            Assert.Equal(@"<h1 id=""42"">Hello <b>World</b></h1>",afterContext.Response.Content);
-            Assert.Equal(200,afterContext.Response.StatusCode);
-            
+            Check.That(afterContext.Response.Content).IsEqualTo(@"<h1 id=""42"">Hello <b>World</b></h1>");
+            Check.That(afterContext.Response.StatusCode).IsEqualTo(200);
+            var contentType = afterContext.Response.Headers.FirstOrDefault(x => x.Key == "content-type");
+            Check.That(contentType).IsNotEqualTo(default(KeyValuePair<string,string[]>));
+            Check.That(contentType.Value).Contains("text/html");
         }
 
+        public void
+        it_should_print_context_in_console_when_needed()
+        {
+            var headers = new Dictionary<string,string[]>{
+                ["accept"]= new []{"text/html"}
+            };
+
+            var server = new Dictionary<string,string>{
+                ["Site:PhysicalFullPath"]=new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName
+            };            
+
+            var testContext = Defaults.Context.With(
+                requestHeaders: headers,
+                path:"/hello/World/42",
+                type:GET,
+                server:server);
+            
+            Route route = Get("/hello/{name}/{id}") 
+                            | Do(ctx => {
+                                    var name = ctx.Params<string>("name","hell");
+                                    var id = ctx.Params<int>("id",0);
+                                    return new {name,id};
+                                })
+                            | Html("simpleH1")
+                            | OK
+                            | Log(production:false);
+
+            Context afterContext = Defaults.Context;
+
+            using (var console = new CaptureConsole())
+            {
+                if(route.Matches(testContext))
+                    afterContext = route.ApplyPipeline(testContext); 
+                Check.That(console.Output).IsEqualTo("42");
+
+            }
+            
+            
+
+        }
     }
 }
