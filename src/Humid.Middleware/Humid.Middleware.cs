@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -27,11 +28,16 @@ namespace Humid.Middleware
             var requestPath = context.Request.Path;
             var method = context.Request.Method;
             var content = string.Empty;
+            var requestHeaders = context.Request.Headers.ToDictionary(k => k.Key, v => v.Value.ToArray());
+            var physicalFullPath = Environment.CurrentDirectory;
 
             var beforeContext = Defaults.Context.With(
                 path:requestPath, 
-                type:(RequestType)Enum.Parse(typeof(RequestType),
-                method));
+                type:(RequestType)Enum.Parse(typeof(RequestType),method),
+                requestHeaders:requestHeaders,
+                server: new Dictionary<string, string>{
+                    {"Site:PhysicalFullPath",physicalFullPath}
+                });
             var route = router.FindRoute(beforeContext);
             if( !(Route.Empty.Equals(route) || WebActions.NOT_FOUND.Equals(route)))
             {

@@ -126,10 +126,13 @@
 
         public static WebAction Html(string templateName)
         => new WebAction(c => {
-            if(c.Response.Model != null && c.Request.Headers.ContainsKey("accept"))
+            if(c.Response.Model != null && (c.Request.Headers.ContainsKey("accept") || c.Request.Headers.ContainsKey("Accept")))
             {
-                var accept = c.Request.Headers["accept"];
-                if(accept.Any(x=>x.Contains("html")))
+                var isHtml = from header in c.Request.Headers
+                            where (header.Key == "accept" || header.Key == "Accept")
+                                    && header.Value.Any(h => h.Contains("html"))
+                            select header;
+                if(isHtml.Any())
                 {
                     //var folder = new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName;
                     //var template = File.ReadAllText(System.IO.Path.Combine(folder+"/templates",templateName));
@@ -139,7 +142,7 @@
                     return c.With(
                         content:serialized,
                         responseHeaders:new Dictionary<string,string[]>(){["content-type"]=new []{"text/html"}});
-                }
+                } else { Console.WriteLine(isHtml);}
             }
             return c;
         });

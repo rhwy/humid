@@ -132,7 +132,7 @@ namespace Humid.Tests
                 requestHeaders: headers,
                 path:"/hello/world/42",
                 type:GET);
-            
+        
             Route route = Get("/hello/{name}/{id}") 
                             | Do(ctx => {
                                     var name = ctx.Params<string>("name","hell");
@@ -243,7 +243,7 @@ namespace Humid.Tests
         public void html_action_can_return_html_with_a_template_name()
         {
             var headers = new Dictionary<string,string[]>{
-                ["accept"]= new []{"text/html"}
+                ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
             };
 
             var server = new Dictionary<string,string>{
@@ -263,7 +263,7 @@ namespace Humid.Tests
                                     return new {name,id};
                                 })
                             | Html("simpleH1")
-                            | OK;
+                            | OK | Log();
 
             Context afterContext = Defaults.Context;
 
@@ -277,11 +277,11 @@ namespace Humid.Tests
             Check.That(contentType.Value).Contains("text/html");
         }
 
-        public void
+        [Fact] public void
         it_should_print_context_in_console_when_needed()
         {
             var headers = new Dictionary<string,string[]>{
-                ["accept"]= new []{"text/html"}
+                ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
             };
 
             var server = new Dictionary<string,string>{
@@ -310,7 +310,41 @@ namespace Humid.Tests
             {
                 if(route.Matches(testContext))
                     afterContext = route.ApplyPipeline(testContext); 
-                Check.That(console.Output).IsEqualTo("42");
+                
+                Check.That(console.Output).IsEqualTo(@"{
+  ""Request"": {
+    ""Type"": 0,
+    ""Path"": ""/hello/World/42"",
+    ""QueryString"": """",
+    ""Query"": {},
+    ""RouteParams"": {
+      ""name"": ""World"",
+      ""id"": ""42""
+    },
+    ""Headers"": {
+      ""Accept"": [
+        ""text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8""
+      ]
+    }
+  },
+  ""Response"": {
+    ""StatusCode"": 200,
+    ""Content"": ""<h1 id=\""42\"">Hello <b>World</b></h1>"",
+    ""Model"": {
+      ""name"": ""World"",
+      ""id"": 42
+    },
+    ""Headers"": {
+      ""content-type"": [
+        ""text/html""
+      ]
+    }
+  },
+  ""Server"": {
+    ""Site:PhysicalFullPath"": ""/Volumes/Work/code/Rui/humid/src/Humid.Tests""
+  }
+}
+");
 
             }
             

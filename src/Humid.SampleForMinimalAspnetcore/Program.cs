@@ -69,7 +69,8 @@ namespace Humid.SampleForMinimalAspnetcore
                                     return new {name};
                                 })
                             | Html("simpleHello")
-                            | OK;
+                            | OK
+                            | Log(true);
 
 
                 return routes 
