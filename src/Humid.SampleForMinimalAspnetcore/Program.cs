@@ -37,6 +37,7 @@ namespace Humid.SampleForMinimalAspnetcore
             {
                 app.UseDeveloperExceptionPage();
             }
+            app.UseStaticFiles();
             app.UseHumid(routes => {
                 var get_hello_A = 
                     Get("/a") 
@@ -47,9 +48,9 @@ namespace Humid.SampleForMinimalAspnetcore
                     new Route("/b",OK)
                      | Content("Hello B");
                 
-                var get_del_hello_C = 
+                var delete_only_hello_C = 
                     Path("/c")
-                    | Verbs(GET,DELETE)
+                    | Verbs(DELETE)
                     | Content("Hello C")
                     | OK;
 
@@ -77,7 +78,7 @@ namespace Humid.SampleForMinimalAspnetcore
                 return routes 
                        - get_hello_A
                        - any_hello_B
-                       - get_del_hello_C
+                       - delete_only_hello_C
                        - get_hello_object
                        - get_hello_name
                        - get_hello_view
