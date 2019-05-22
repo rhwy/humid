@@ -155,6 +155,7 @@
 
         public static WebAction Log(bool production = false)
         => new WebAction(c => {
+            if(production) return c;
             var jsonContext = JsonConvert.SerializeObject(c,Formatting.Indented);
             Console.WriteLine(jsonContext);
             return c;

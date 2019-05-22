@@ -294,5 +294,44 @@ namespace Humid.Tests
             Check.That(console.Output).IsEqualTo(expected);
             }
         }
+
+        [Fact] public void
+        it_should_not_print_context_in_console_in_production_mode()
+        {
+            var headers = new Dictionary<string,string[]>{
+                ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
+            };
+            var homeDir = new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName;
+            var server = new Dictionary<string,string>{
+                ["Site:PhysicalFullPath"]=homeDir
+            };            
+
+            var testContext = Defaults.Context.With(
+                requestHeaders: headers,
+                path:"/hello/World/42",
+                type:GET,
+                server:server);
+            
+            Route route = Get("/hello/{name}/{id}") 
+                            | Do(ctx => {
+                                    var name = ctx.Params<string>("name","hell");
+                                    var id = ctx.Params<int>("id",0);
+                                    return new {name,id};
+                                })
+                            | Html("simpleH1")
+                            | OK
+                            | Log(production:true);
+
+            Context afterContext = Defaults.Context;
+
+            using (var console = new CaptureConsole())
+            {
+                if(route.Matches(testContext))
+                    afterContext = route.ApplyPipeline(testContext); 
+                
+            var expected = JsonConvert.SerializeObject(afterContext,Formatting.Indented) + Environment.NewLine;
+            Check.That(console.Output).IsEqualTo("");
+            }
+        }
     }
 }
