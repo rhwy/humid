@@ -1,19 +1,18 @@
-using Xunit;
-using System.Reflection;
-using System;
-using System.Linq;
-using NFluent;
-using System.Collections.Generic;
-
-using static Humid.Core;
-using static Humid.WebActions;
-using static Humid.Helpers;
-using System.IO;
-using NFluent.Mocks;
-using Newtonsoft.Json;
-
 namespace Humid.Tests
 {
+    using Xunit;
+    using System.Reflection;
+    using System;
+    using System.Linq;
+    using NFluent;
+    using System.Collections.Generic;
+
+    using static Humid.Core;
+    using static Humid.WebActions;
+    using static Humid.Helpers;
+    using System.IO;
+
+
     public class HandleBetterResponse
     {
         [Fact] public void 
@@ -241,7 +240,7 @@ namespace Humid.Tests
                                     return new {name,id};
                                 })
                             | Html("simpleH1")
-                            | OK | Log();
+                            | OK ;
 
             Context afterContext = Defaults.Context;
 
@@ -254,84 +253,6 @@ namespace Humid.Tests
             var contentType = afterContext.Response.Headers.FirstOrDefault(x => x.Key == "Content-Type");
             Check.That(contentType).IsNotEqualTo(default(KeyValuePair<string,string[]>));
             Check.That(contentType.Value).Contains("text/html;charset=utf-8");
-        }
-
-        [Fact] public void
-        it_should_print_context_in_console_when_needed()
-        {
-            var headers = new Dictionary<string,string[]>{
-                ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
-            };
-            var homeDir = new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName;
-            var server = new Dictionary<string,string>{
-                ["Site:PhysicalFullPath"]=homeDir
-            };            
-
-            var testContext = Defaults.Context.With(
-                requestHeaders: headers,
-                path:"/hello/World/42",
-                type:GET,
-                server:server);
-            
-            Route route = Get("/hello/{name}/{id}") 
-                            | Do(ctx => {
-                                    var name = ctx.Params<string>("name","hell");
-                                    var id = ctx.Params<int>("id",0);
-                                    return new {name,id};
-                                })
-                            | Html("simpleH1")
-                            | OK
-                            | Log(production:false);
-
-            Context afterContext = Defaults.Context;
-
-            using (var console = new CaptureConsole())
-            {
-                if(route.Matches(testContext))
-                    afterContext = route.ApplyPipeline(testContext); 
-                
-            var expected = JsonConvert.SerializeObject(afterContext,Formatting.Indented) + Environment.NewLine;
-            Check.That(console.Output).IsEqualTo(expected);
-            }
-        }
-
-        [Fact] public void
-        it_should_not_print_context_in_console_in_production_mode()
-        {
-            var headers = new Dictionary<string,string[]>{
-                ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
-            };
-            var homeDir = new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName;
-            var server = new Dictionary<string,string>{
-                ["Site:PhysicalFullPath"]=homeDir
-            };            
-
-            var testContext = Defaults.Context.With(
-                requestHeaders: headers,
-                path:"/hello/World/42",
-                type:GET,
-                server:server);
-            
-            Route route = Get("/hello/{name}/{id}") 
-                            | Do(ctx => {
-                                    var name = ctx.Params<string>("name","hell");
-                                    var id = ctx.Params<int>("id",0);
-                                    return new {name,id};
-                                })
-                            | Html("simpleH1")
-                            | OK
-                            | Log(production:true);
-
-            Context afterContext = Defaults.Context;
-
-            using (var console = new CaptureConsole())
-            {
-                if(route.Matches(testContext))
-                    afterContext = route.ApplyPipeline(testContext); 
-                
-            var expected = JsonConvert.SerializeObject(afterContext,Formatting.Indented) + Environment.NewLine;
-            Check.That(console.Output).IsEqualTo("");
-            }
         }
     }
 }

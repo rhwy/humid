@@ -142,7 +142,9 @@
                     return c.With(
                         content:serialized,
                         responseHeaders:new Dictionary<string,string[]>(){["Content-Type"]=new []{"text/html;charset=utf-8"}});
-                } else { Console.WriteLine(isHtml);}
+                } else { 
+                    //Console.WriteLine(isHtml);
+                }
             }
             return c;
         });
@@ -153,11 +155,9 @@
         public static WebAction NOT_FOUND
         => new WebAction(c => c.With(statusCode:404,content:"Page Not Found"));
 
-        public static WebAction Log(bool production = false)
+        public static WebAction Log(string match, Action<Context> logger)
         => new WebAction(c => {
-            if(production) return c;
-            var jsonContext = JsonConvert.SerializeObject(c,Formatting.Indented);
-            Console.WriteLine(jsonContext);
+            if(c.Environment == match) logger(c);
             return c;
         });
 
@@ -365,9 +365,12 @@
         public Response Response {get;}
 
         public Dictionary<string, string> Server {get;}
+        public string Environment {get;}
         public Context(Request request, Response response, Dictionary<string,string> server)
         {
             Request = request; Response = response;Server = server;
+            Environment = server.FirstOrDefault(x=>
+                x.Key?.ToLowerInvariant() == "environment" || x.Key?.ToLowerInvariant() == "env").Value ?? "production";
         }
         public T Params<T>(string key, T defaultValue = default(T))
         {
