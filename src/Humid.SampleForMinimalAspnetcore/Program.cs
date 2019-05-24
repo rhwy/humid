@@ -72,7 +72,7 @@ namespace Humid.SampleForMinimalAspnetcore
                                 })
                             | Html("simpleHello")
                             | OK
-                            | Log(true);
+                            | Log("production");
 
 
                 return routes 

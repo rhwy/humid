@@ -125,11 +125,69 @@ namespace Humid.Tests
                 server:server);
             string output = null;
             AppLogger.Default = (s) => output = s.Response.Content;
-            
+
             Route route = Get("/hello") 
                             | Do(ctx => { return "hello"; })
                             | OK
                             | Log(match:"test"); 
+
+            Context afterContext = Defaults.Context;
+            if(route.Matches(testContext))
+                    afterContext = route.ApplyPipeline(testContext); 
+                
+            Check.That(output).IsEqualTo("hello");
+        }
+
+        [Fact] 
+        public void
+        it_should_not_fail_if_default_logger_not_defined()
+        {
+            var headers = new Dictionary<string,string[]>{
+                ["Accept"]= new []{"text/html"}
+            };
+            var server = new Dictionary<string,string>{{"env","test"}};            
+
+            var testContext = Defaults.Context.With(
+                requestHeaders: headers,
+                path:"/hello",
+                type:GET,
+                server:server);
+            string output = null;
+            AppLogger.Default = null;
+
+            Route route = Get("/hello") 
+                            | Do(ctx => { return "hello"; })
+                            | OK
+                            | Log(match:"test"); 
+
+            Context afterContext = Defaults.Context;
+            if(route.Matches(testContext))
+                    afterContext = route.ApplyPipeline(testContext); 
+                
+            Check.That(output).IsEqualTo(null);
+        }
+
+        [Fact] 
+        public void
+        it_should_match_dev_when_not_param_in_logger()
+        {
+            var headers = new Dictionary<string,string[]>{
+                ["Accept"]= new []{"text/html"}
+            };
+            var server = new Dictionary<string,string>{{"env","dev"}};            
+
+            var testContext = Defaults.Context.With(
+                requestHeaders: headers,
+                path:"/hello",
+                type:GET,
+                server:server);
+            string output = null;
+            AppLogger.Default = c  => output = c.Response.Content;
+
+            Route route = Get("/hello") 
+                            | Do(ctx => { return "hello"; })
+                            | OK
+                            | Log(); 
 
             Context afterContext = Defaults.Context;
             if(route.Matches(testContext))

@@ -155,7 +155,7 @@
         public static WebAction NOT_FOUND
         => new WebAction(c => c.With(statusCode:404,content:"Page Not Found"));
 
-        public static WebAction Log(string match, Action<Context> logger = null)
+        public static WebAction Log(string match = "dev", Action<Context> logger = null)
         => new WebAction(c => {
             if(c.Environment == match) 
                if(logger != null ) logger(c); else AppLogger.Default?.Invoke(c);
