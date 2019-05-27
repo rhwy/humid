@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Humid.Middleware;
 using static Humid.Core;
 using static Humid.WebActions;
+using HeyRed.MarkdownSharp;
 
 namespace Humid.SampleForMinimalAspnetcore
 {
@@ -61,11 +62,15 @@ namespace Humid.SampleForMinimalAspnetcore
                 
                 var get_hello_object = 
                     Get("/hello/world")
-                     | Do(ctx => new{ message = "Hello world",value=42} )
+                     | Do(ctx => {
+                            var md = new HeyRed.MarkdownSharp.Markdown();
+                            var html = md.Transform("<h2>Hello,</h2><p>**uncatched route**</p>");
+
+                            return new{ message = html,value=42}; })
                      | OK;
                 var get_hello_view = 
                     Get("/niceHello/{name}") 
-                            | Do(ctx => {
+                            | Do(ctx => { 
                                     int id = ctx.Query<int>("id",-1);
                                     var name = ctx.Params<string>("name","world");
                                     return new {name,id};
@@ -91,7 +96,7 @@ namespace Humid.SampleForMinimalAspnetcore
             {
                 if(context.Response.StatusCode == 400)
                 {
-                    await context.Response.WriteAsync("Hello from uncatched route!");
+                    await context.Response.WriteAsync("your query doesn't match any route");
                 }
                 
             });

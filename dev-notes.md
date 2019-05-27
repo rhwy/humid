@@ -9,6 +9,10 @@
 * introduce async?
 * introduce railway?
 
+## Comments
+
+* it actually match routes with case, it should be case insensitive
+* change Context.Server to a real class in order to simplify access to common props directly instead of using dict/string
 
 
 ## Done

@@ -7,12 +7,14 @@
 
   <ItemGroup>
     <PackageReference Include="dotliquid" Version="2.0.314" />
+    <PackageReference Include="markdown" Version="2.2.1" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Humid\Humid.csproj" />
+    <ProjectReference Include="..\Humid.DotLiquid\Humid.DotLiquid.csproj" />
     <ProjectReference Include="..\Humid.Middleware\Humid.Middleware.csproj" />
   </ItemGroup>
 

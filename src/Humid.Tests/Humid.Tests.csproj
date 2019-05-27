@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Humid\Humid.csproj" />
+    <ProjectReference Include="..\Humid.DotLiquid\Humid.DotLiquid.csproj" />
   </ItemGroup>
 
 </Project>
