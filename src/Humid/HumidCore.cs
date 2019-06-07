@@ -314,9 +314,15 @@
         //public static implicit operator string (string[] other)
        
     }
+    
+    ///<summary>
+    ///This defines all the properties of the entering request
+    ///</summary>
     public struct Request
     {
+        ///<value>Returns the enum Type of the request</value>
         public RequestType Type {get;}
+        ///<value>Returns the string name of the request type</value>
         public string TypeName => Type.ToString();
         public string Path {get;}
         public string QueryString {get;}

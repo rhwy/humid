@@ -45,6 +45,8 @@ namespace Humid.Tests
         [Fact] public void 
         html_action_can_return_html_with_a_template_name()
         {
+            WebTemplateEngine.Register("html",new LiquidTemplateEngine());
+            
             var headers = new Dictionary<string,string[]>{
                 ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
             };
@@ -73,7 +75,7 @@ namespace Humid.Tests
             if(route.Matches(testContext))
                 afterContext = route.ApplyPipeline(testContext); 
             
-            Check.That(afterContext.Response.Content).IsEqualTo(@"<h1 id=""42"">Hello <b>World</b></h1>");
+            Check.That(afterContext.Response.Content).IsEqualTo(@"<h1 id=""42"">Hello WORLD</h1>");
             Check.That(afterContext.Response.StatusCode).IsEqualTo(200);
 
             var contentType = afterContext.Response.Headers.FirstOrDefault(x => x.Key == "Content-Type");

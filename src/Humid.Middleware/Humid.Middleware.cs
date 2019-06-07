@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 
 using static Humid.Core;
@@ -16,10 +17,12 @@ namespace Humid.Middleware
     {
         private readonly RequestDelegate _next;
         private Func<Router,Router> _defineRoutes;
-        public HumidWorkflow(RequestDelegate next,Func<Router,Router> defineRoutes)
+        private IHostingEnvironment _environment;
+        public HumidWorkflow(RequestDelegate next,Func<Router,Router> defineRoutes, IHostingEnvironment environment)
         {
             _next = next;
             _defineRoutes = defineRoutes;
+            _environment = environment;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -36,11 +39,12 @@ namespace Humid.Middleware
                 type:(RequestType)Enum.Parse(typeof(RequestType),method),
                 requestHeaders:requestHeaders,
                 server: new Dictionary<string, string>{
-                    {"Site:PhysicalFullPath",physicalFullPath}
+                    {"Site:PhysicalFullPath",physicalFullPath},
+                    {"Environment",_environment.EnvironmentName}
                 },
                 query:queryString);
             var route = router.FindRoute(beforeContext);
-            if( !(Route.Empty.Equals(route) || WebActions.NOT_FOUND.Equals(route)))
+            if( !Route.Empty.Equals(route) && !WebActions.NOT_FOUND.Equals(route))
             {
                 var afterContext = route.ApplyPipeline(beforeContext);
                 await context.Response.WriteAsync(afterContext.Response.Content);
@@ -52,9 +56,12 @@ namespace Humid.Middleware
     public static class Linker
     {
         public static IApplicationBuilder UseHumid(
-            this IApplicationBuilder builder,Func<Router,Router> defineRoutes)
+            this IApplicationBuilder builder, IHostingEnvironment environment, Func<Router,Router> defineRoutes)
         {
-            return builder.UseMiddleware<HumidWorkflow>(defineRoutes);
+            var te = builder.ApplicationServices.GetService(typeof(ITemplateEngine)) as ITemplateEngine;
+            Console.WriteLine($"found templates : {te.GetType().Name}");
+            WebTemplateEngine.Register("html",te);
+            return builder.UseMiddleware<HumidWorkflow>(defineRoutes,environment);
         }
     }
 

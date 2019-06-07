@@ -11,7 +11,7 @@ namespace Humid.DotLiquid
             var templateSource = RenderTemplate(context, name);
             
             Template template = Template.Parse(templateSource); 
-            return template.Render(Hash.FromAnonymousObject(model)); 
+            return template.Render(Hash.FromAnonymousObject((dynamic)model)); 
         }
 
         public string RenderTemplate(Context context, string name)
@@ -21,6 +21,7 @@ namespace Humid.DotLiquid
             var templatePath = Path.Combine(rootPath,templateRelativePath);
             if(File.Exists(templatePath))
                 return File.ReadAllText(templatePath);
+            
             return null;
         }
     }
