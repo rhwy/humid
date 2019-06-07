@@ -46,7 +46,10 @@
         {
             if(store.ContainsKey(mediaType))
             {
-                throw new ArgumentException($"you're trying to to change template rendering engine for type {mediaType}");
+                if(renderer != store[mediaType])
+                    throw new ArgumentException($"you're trying to to change template rendering engine for type {mediaType}");
+                //else just do nothing
+                return;
             }
             store.Add(mediaType,renderer);
         }
@@ -123,8 +126,12 @@
             }
             return c;
         });
-
-        public static WebAction Html(string templateName)
+        private static Func<T1> f<T1>(Func<T1> s) => s;
+        //private static Func<T1,T2> f<T1,T2>(Func<T1,T2> s) => s;
+        //private static Func<T1,T2,T3> f<T1,T2,T3>(Func<T1,T2,T3> s) => s;
+        //private static Func<T1,T2,T3,T4> f<T1,T2,T3,T4>(Func<T1,T2,T3,T4> s) => s;
+        
+        public static WebAction Html(string templateName = "")
         => new WebAction(c => {
             if(c.Response.Model != null && (c.Request.Headers.ContainsKey("accept") || c.Request.Headers.ContainsKey("Accept")))
             {
@@ -132,19 +139,26 @@
                             where (header.Key == "accept" || header.Key == "Accept")
                                     && header.Value.Any(h => h.Contains("html"))
                             select header;
+                var findTemplateName = f(() => {
+                    if(!string.IsNullOrEmpty(templateName)) return templateName;
+                    if(c.Response.Model != null) return (string)c.Response.Model.GetType().Name;
+                    return string.Empty;
+                });
+
                 if(isHtml.Any())
                 {
                     //var folder = new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName;
                     //var template = File.ReadAllText(System.IO.Path.Combine(folder+"/templates",templateName));
                     var renderer = WebTemplateEngine.Get("html");
-                    var serialized = renderer.RenderTemplate(c,templateName,c.Response.Model);
+
+                    var nameToUse = findTemplateName();
+
+                    var serialized = renderer.RenderTemplate(c,nameToUse,c.Response.Model);
 
                     return c.With(
                         content:serialized,
                         responseHeaders:new Dictionary<string,string[]>(){["Content-Type"]=new []{"text/html;charset=utf-8"}});
-                } else { 
-                    //Console.WriteLine(isHtml);
-                }
+                } 
             }
             return c;
         });

@@ -14,6 +14,8 @@ namespace Humid.Tests
 
     public class Using_DoLiquid_as_ViewEngine
     {
+        public static ITemplateEngine liquidEngineForTest = new LiquidTemplateEngine();
+
         [Fact] public void 
         templates_use_an_abstraction()
         {
@@ -32,7 +34,7 @@ namespace Humid.Tests
                 
             var sampleObject = new {name="world"};
 
-            ITemplateEngine engine = new LiquidTemplateEngine();
+            ITemplateEngine engine = liquidEngineForTest;
             Check.ThatCode(() => {
                 string renderTemplate = engine.RenderTemplate(testContext,"simpleLiquid");
                 string renderTemplateWithModel = engine.RenderTemplate(testContext,"simpleliquid",sampleObject);
@@ -45,8 +47,8 @@ namespace Humid.Tests
         [Fact] public void 
         html_action_can_return_html_with_a_template_name()
         {
-            WebTemplateEngine.Register("html",new LiquidTemplateEngine());
-            
+            WebTemplateEngine.Register("html",liquidEngineForTest);
+
             var headers = new Dictionary<string,string[]>{
                 ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
             };
@@ -76,6 +78,47 @@ namespace Humid.Tests
                 afterContext = route.ApplyPipeline(testContext); 
             
             Check.That(afterContext.Response.Content).IsEqualTo(@"<h1 id=""42"">Hello WORLD</h1>");
+            Check.That(afterContext.Response.StatusCode).IsEqualTo(200);
+
+            var contentType = afterContext.Response.Headers.FirstOrDefault(x => x.Key == "Content-Type");
+            Check.That(contentType).IsNotEqualTo(default(KeyValuePair<string,string[]>));
+            Check.That(contentType.Value).Contains("text/html;charset=utf-8");
+        }
+
+        public class AModelToTest { public int Id {get;set;}}
+
+        [Fact] public void 
+        html_action_can_return_html_with_template_name_based_on_model()
+        {
+            WebTemplateEngine.Register("html",liquidEngineForTest);
+            
+            var headers = new Dictionary<string,string[]>{
+                ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
+            };
+
+            var server = new Dictionary<string,string>{
+                ["Site:PhysicalFullPath"]=new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName
+            };            
+
+            var testContext = Defaults.Context.With(
+                requestHeaders: headers,
+                path:"/hello/42",
+                type:GET,
+                server:server);
+            
+            Route route = Get("/hello/{id}") 
+                            | Do(ctx => {
+                                    return new AModelToTest{ Id=ctx.Params<int>("id",0)} ;
+                                })
+                            | Html()
+                            | OK ;
+
+            Context afterContext = Defaults.Context;
+
+            if(route.Matches(testContext))
+                afterContext = route.ApplyPipeline(testContext); 
+            
+            Check.That(afterContext.Response.Content).IsEqualTo(@"<p>This is a model to test with id=42</p>");
             Check.That(afterContext.Response.StatusCode).IsEqualTo(200);
 
             var contentType = afterContext.Response.Headers.FirstOrDefault(x => x.Key == "Content-Type");
