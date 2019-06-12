@@ -125,5 +125,55 @@ namespace Humid.Tests
             Check.That(contentType).IsNotEqualTo(default(KeyValuePair<string,string[]>));
             Check.That(contentType.Value).Contains("text/html;charset=utf-8");
         }
+
+        [Fact] public void 
+        html_action_can_return_html_with_a_different_model_than_the_json_accepted_action()
+        {
+            WebTemplateEngine.Register("html",liquidEngineForTest);
+            
+            var headersForhtml = new Dictionary<string,string[]>{
+                ["Accept"]= new []{"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
+            };
+            var headersForJson = new Dictionary<string,string[]>{
+                ["Accept"]= new []{"application/json"}
+            };
+
+            var server = new Dictionary<string,string>{
+                ["Site:PhysicalFullPath"]=new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName
+            };            
+
+            var testContextForHtml = Defaults.Context.With(
+                requestHeaders: headersForhtml,
+                path:"/hello/42",
+                type:GET,
+                server:server);
+
+            var testContextForJson = Defaults.Context.With(
+                requestHeaders: headersForJson,
+                path:"/hello/42",
+                type:GET,
+                server:server);
+
+            Route route = Get("/hello/{id}") 
+                            | Do(ctx => {
+                                    return new AModelToTest{ Id=ctx.Params<int>("id",0)} ;
+                                })
+                            | Html(updateModel: m=>new AModelToTest{ Id=m.Id * 2})
+                            | OK ;
+
+            Context afterContext = Defaults.Context;
+
+            if(route.Matches(testContextForHtml))
+                afterContext = route.ApplyPipeline(testContextForHtml); 
+            
+            Check.That(afterContext.Response.Content).IsEqualTo(@"<p>This is a model to test with id=84</p>");
+            Check.That(afterContext.Response.StatusCode).IsEqualTo(200);
+
+            var contentType = afterContext.Response.Headers.FirstOrDefault(x => x.Key == "Content-Type");
+            Check.That(contentType).IsNotEqualTo(default(KeyValuePair<string,string[]>));
+            Check.That(contentType.Value).Contains("text/html;charset=utf-8");
+
+
+        }
     }
 }

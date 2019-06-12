@@ -131,7 +131,13 @@
         //private static Func<T1,T2,T3> f<T1,T2,T3>(Func<T1,T2,T3> s) => s;
         //private static Func<T1,T2,T3,T4> f<T1,T2,T3,T4>(Func<T1,T2,T3,T4> s) => s;
         
-        public static WebAction Html(string templateName = "")
+        // public static WebAction Html(Func<dynamic,dynamic> updateModel)
+        // => new WebAction(c=>{
+        //     c.Response.Model = updateModel(c);
+        //     return Html();
+        // });
+
+        public static WebAction Html(string templateName = "", Func<dynamic,dynamic> updateModel = null)
         => new WebAction(c => {
             if(c.Response.Model != null && (c.Request.Headers.ContainsKey("accept") || c.Request.Headers.ContainsKey("Accept")))
             {
@@ -152,8 +158,8 @@
                     var renderer = WebTemplateEngine.Get("html");
 
                     var nameToUse = findTemplateName();
-
-                    var serialized = renderer.RenderTemplate(c,nameToUse,c.Response.Model);
+                    var model = updateModel == null ? c.Response.Model : updateModel(c.Response.Model);
+                    var serialized = renderer.RenderTemplate(c,nameToUse,model);
 
                     return c.With(
                         content:serialized,
