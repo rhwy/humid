@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.Http;
 using Humid.Middleware;
 using static Humid.Core;
 using static Humid.WebActions;
-using HeyRed.MarkdownSharp;
 using System.IO;
 using Fluid;
 using Humid.DotLiquid;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Configuration;
 
 namespace Humid.SampleForMinimalAspnetcore
 {
@@ -19,13 +19,23 @@ namespace Humid.SampleForMinimalAspnetcore
     {
         public static void Main(string[] args)
         {
-            new DataSource().Open();
+            //new DataSource().Open();
 
             CreateWebHostBuilder(args).Build().Run();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((hostingContext,config) =>
+                {
+                    var host = hostingContext.HostingEnvironment;
+                    config.SetBasePath(Directory.GetCurrentDirectory());
+                    config.AddJsonFile("appsettings.json", false, true);
+                    config.AddJsonFile($"appsettings.{host.EnvironmentName}.json", true, true);
+                    config.AddCommandLine(args);
+                    config.AddEnvironmentVariables();
+                })
+                .UseContentRoot("templates").UseWebRoot("wwwroot")
                 .UseStartup<Startup>();
     }
 
@@ -98,15 +108,20 @@ namespace Humid.SampleForMinimalAspnetcore
                         | Log(
                             match:"Production",
                             logger:c=>Console.WriteLine($"match : {c.Request.TypeName} {c.Request.Path}"));
-
+                
+                //how to group routes by functionality, ex:
+//                var groupedRoutesWithViews = 
+//                    f<Router>(r => r
+//                                    - get_hello_view
+//                                    - get_hello_liquid);
+//                
                 return routes 
                        - get_hello_A
                        - any_hello_B
                        - delete_only_hello_C
                        - get_hello_object
                        - get_hello_name
-                       - get_hello_view
-                       - get_hello_liquid
+                       //- groupedRoutesWithViews
                 ;
                      
            
@@ -161,20 +176,25 @@ namespace Humid.SampleForMinimalAspnetcore
         {
             var connection = new SqliteConnection("Data Source=HumidSample.db");
             connection.Open();
+            var recreateCommand = connection.CreateCommand();
+            recreateCommand.CommandText = @"
+        DROP TABLE Properties;
+        DROP TABLE Contact;
+";
+            recreateCommand.ExecuteNonQuery();
             //var init = "CREATE TABLE IF NOT EXISTS some_table (id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT);";
             var createCommand = connection.CreateCommand();
             createCommand.CommandText =
             @"
                 CREATE TABLE IF NOT EXISTS Contact (
-                    id INTEGER PRIMARY KEY,
+                    id INTEGER,
                     label TEXT
                 );
                 CREATE TABLE IF NOT EXISTS Properties (
-                    id INTEGER PRIMARY KEY,
+                    id INTEGER,
                     label TEXT,
-                    value TEXT,
-                    contact_id INTEGER NOT NULL,
-                    FOREIGN KEY (contact_id) REFERENCES Contact
+                    content TEXT,
+                    contact_id INTEGER
                 );
                 INSERT OR IGNORE INTO Contact
                 VALUES (1, 'Rui') 
@@ -183,10 +203,11 @@ namespace Humid.SampleForMinimalAspnetcore
                 VALUES (1, 'Email', 'play@rui.fr',1),
                        (2, 'LastName', 'Carvalho',1);
             ";
+            //,FOREIGN KEY (contact_id) REFERENCES Contact
             createCommand.ExecuteNonQuery();
             var selectCommand  = connection.CreateCommand();
             selectCommand.CommandText = 
-                "SELECT * FROM Contact C INNER JOIN Properties P ON C.id=P.contact_id";
+                "SELECT * FROM Properties";
             using (var reader = selectCommand.ExecuteReader())
             {
                 while(reader.Read())

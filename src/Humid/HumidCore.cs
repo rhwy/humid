@@ -1,13 +1,11 @@
 ﻿namespace Humid
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Text.RegularExpressions;
     using Newtonsoft.Json;
-    using System.Reflection;
 
     public static class Core
     {
@@ -126,8 +124,9 @@
             }
             return c;
         });
-        private static Func<T1> f<T1>(Func<T1> s) => s;
-        //private static Func<T1,T2> f<T1,T2>(Func<T1,T2> s) => s;
+        public static Func<T1> f<T1>(Func<T1> s) => s;
+        public static Func<T1,T1> f<T1>(Func<T1,T1> s) => s;
+        private static Func<T1,T2> f<T1,T2>(Func<T1,T2> s) => s;
         //private static Func<T1,T2,T3> f<T1,T2,T3>(Func<T1,T2,T3> s) => s;
         //private static Func<T1,T2,T3,T4> f<T1,T2,T3,T4>(Func<T1,T2,T3,T4> s) => s;
         

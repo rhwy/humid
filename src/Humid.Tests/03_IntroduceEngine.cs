@@ -188,5 +188,34 @@ namespace Humid.Tests
             Assert.Equal("I'm B",content);
 
       }
+
+      [Fact]
+      public void
+          routes_can_be_grouped_by_an_expression_area()
+      {
+          var testContext = Defaults.Context.With(path:"/c",type:GET);
+           
+          var emptyRouter = new Router();
+          var b_and_c_area = f((Router r) 
+              => r
+                 + (new Route("/b", OK) | Content("I'm B"))
+                 + (new Route("/c", OK) | Content("I'm C")));
+          
+//          var router = emptyRouter
+//                       + (new Route("/a",OK) | Content("I'm A"))
+//                       + b_and_c_area;
+//          
+//          Assert.Equal(3, router.Routes.Count());
+//
+//          var route = router.FindRoute(testContext);
+//
+//          string content = null;
+//          int status = -1;
+//
+//          (content,status) = route.ApplyPipeline(testContext); 
+//            
+//          Assert.Equal(200,status);
+//          Assert.Equal("I'm B",content);
+      }
     }
 }
