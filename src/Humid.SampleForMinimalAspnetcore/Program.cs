@@ -35,7 +35,7 @@ namespace Humid.SampleForMinimalAspnetcore
                     config.AddCommandLine(args);
                     config.AddEnvironmentVariables();
                 })
-                .UseContentRoot("templates").UseWebRoot("wwwroot")
+                //.UseContentRoot("templates").UseWebRoot("wwwroot")
                 .UseStartup<Startup>();
     }
 
@@ -110,21 +110,19 @@ namespace Humid.SampleForMinimalAspnetcore
                             logger:c=>Console.WriteLine($"match : {c.Request.TypeName} {c.Request.Path}"));
                 
                 //how to group routes by functionality, ex:
-//                var groupedRoutesWithViews = 
-//                    f<Router>(r => r
-//                                    - get_hello_view
-//                                    - get_hello_liquid);
-//                
+                var groupedRoutesWithViews = 
+                    f<Router>(r => r
+                                    - get_hello_view
+                                    - get_hello_liquid);
+                
                 return routes 
                        - get_hello_A
                        - any_hello_B
                        - delete_only_hello_C
                        - get_hello_object
                        - get_hello_name
-                       //- groupedRoutesWithViews
+                       - groupedRoutesWithViews
                 ;
-                     
-           
             });
 
             app.Run(async (context) =>
@@ -200,8 +198,8 @@ namespace Humid.SampleForMinimalAspnetcore
                 VALUES (1, 'Rui') 
                 ;
                 INSERT OR IGNORE INTO Properties
-                VALUES (1, 'Email', 'play@rui.fr',1),
-                       (2, 'LastName', 'Carvalho',1);
+                VALUES (1, 'Email', 'hello@hello.fr',1),
+                       (2, 'LastName', 'Page',1);
             ";
             //,FOREIGN KEY (contact_id) REFERENCES Contact
             createCommand.ExecuteNonQuery();

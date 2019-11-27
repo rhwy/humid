@@ -606,11 +606,20 @@
             current.AddRoute(newRoute);
             return current;
         }
+        
         public static Router operator - (Router current, Route newRoute)
         {
             current.AddRoute(newRoute);
             return current;
         }
+        
+        public static Router operator + (Router current, Func<Router,Router> groupOfRoutes)
+        => groupOfRoutes(current);
+        
+        
+        public static Router operator - (Router current, Func<Router,Router> groupOfRoutes)
+        => groupOfRoutes(current);
+        
     }
 
     public delegate Context WebAction(Context before);

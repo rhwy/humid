@@ -201,21 +201,21 @@ namespace Humid.Tests
                  + (new Route("/b", OK) | Content("I'm B"))
                  + (new Route("/c", OK) | Content("I'm C")));
           
-//          var router = emptyRouter
-//                       + (new Route("/a",OK) | Content("I'm A"))
-//                       + b_and_c_area;
-//          
-//          Assert.Equal(3, router.Routes.Count());
-//
-//          var route = router.FindRoute(testContext);
-//
-//          string content = null;
-//          int status = -1;
-//
-//          (content,status) = route.ApplyPipeline(testContext); 
-//            
-//          Assert.Equal(200,status);
-//          Assert.Equal("I'm B",content);
+          var router = emptyRouter
+                       + (new Route("/a",OK) | Content("I'm A"))
+                       + b_and_c_area;
+          
+          Assert.Equal(3, router.Routes.Count());
+
+          var route = router.FindRoute(testContext);
+
+          string content = null;
+          int status = -1;
+
+          (content,status) = route.ApplyPipeline(testContext); 
+            
+          Assert.Equal(200,status);
+          Assert.Equal("I'm C",content);
       }
     }
 }
