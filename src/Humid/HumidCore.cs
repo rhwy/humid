@@ -33,9 +33,9 @@
             Request request, Response response, Dictionary<string,string> server = null)
         => new Context(request,response,server ?? new Dictionary<string,string>());
     }
-
-    public delegate string RenderTemplate(string template, dynamic model, dynamic options);
-
+//--------------------------------
+    #region Helpers & Tools
+    
     public static class WebTemplateEngine
     {
         private static Dictionary<string,ITemplateEngine> store = new Dictionary<string, ITemplateEngine>();
@@ -296,9 +296,11 @@
             .ToDictionary(x=>x.key, x=>parseValues(x.value)) ?? new Dictionary<string,string[]>();
         }
     }
+    #endregion
+//--------------------------------
 
-
-#region Web Models
+//--------------------------------
+    #region Web Models
     
     public enum RequestType 
     {
@@ -619,6 +621,12 @@
         
         public static Router operator - (Router current, Func<Router,Router> groupOfRoutes)
         => groupOfRoutes(current);
+
+
+        public static Router operator +(Router current, IArea area)
+        {
+            return current;
+        }
         
     }
 
@@ -629,7 +637,10 @@
     public delegate (Context context, bool isMatch) Filter((Context context, bool isMatch) previous);
     
     #endregion
+//--------------------------------
 
+//--------------------------------
+    #region Extras
 
     public interface ITemplateEngine
     {
@@ -655,6 +666,7 @@
             }
             return template;
         }
+        
         public string RenderTemplate(Context context, string name)
         {
             var rootPath = context.Server["Site:PhysicalFullPath"];
@@ -670,4 +682,13 @@
     {
         public static Action<Context> Default {get;set;}
     }
+
+    public interface IArea
+    {
+        
+    }
+    
+    
+    #endregion
+//--------------------------------    
 } 

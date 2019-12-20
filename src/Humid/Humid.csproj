@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>0.4.0</Version>
+    <Version>0.5.0</Version>
     <PackageId>humid</PackageId>
     <Authors>Rui Carvalho</Authors>
     <Title>Humid</Title>
     <Description>
       Humid stands for HUmble MIDdleware. It's a very thin and light web library, written in a functional style and that allows you to write functional style 
-      web applications or services. it comes completely without any dependency and fully tested. it can also be integrated as one file source code ;)
+      web applications or services. it comes completely without any dependency other than aspnet core platform and fully tested. it can also be integrated as one file source code ;)
     </Description>
     <RepositoryUrl>https://github.com/rhwy/Humid</RepositoryUrl>
     <IncludeSource>true</IncludeSource>

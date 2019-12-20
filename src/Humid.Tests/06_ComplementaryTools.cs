@@ -5,9 +5,6 @@ using System.Collections.Generic;
 
 using static Humid.Core;
 using static Humid.WebActions;
-using System.IO;
-using NFluent.Mocks;
-using Newtonsoft.Json;
 
 namespace Humid.Tests
 {
@@ -61,6 +58,7 @@ namespace Humid.Tests
                 path:"/hello",
                 type:GET,
                 server:server);
+            
             string output = null;
             Action<Context> logger = (s) => output = s.Response.Content;
 
