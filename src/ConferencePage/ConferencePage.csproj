@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="DBreeze" Version="1.95.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Humid.DotLiquid\Humid.DotLiquid.csproj" />
+      <ProjectReference Include="..\Humid.Middleware\Humid.Middleware.csproj" />
+      <ProjectReference Include="..\Humid\Humid.csproj" />
+    </ItemGroup>
+
+</Project>
